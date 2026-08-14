@@ -18,7 +18,7 @@ export const getDeliveryZones = async (includeInactive = false) => {
     let query = supabase.from('delivery_zones').select('*').order('name');
     
     if (!includeInactive) {
-      query = query.eq('is_active', true);
+      query = query.eq('active', true);
     }
     
     const { data, error } = await query;
@@ -41,8 +41,8 @@ export const createDeliveryZone = withAuth(
           name: data.name,
           description: data.description,
           delivery_fee: data.delivery_fee,
-          minimum_order_value: data.minimum_order_value || 0,
-          is_active: data.is_active ?? true
+          minimum_order: data.minimum_order_value || 0,
+          active: data.is_active ?? true
         }])
         .select()
         .single();
@@ -76,8 +76,8 @@ export const createZoneAction = withAuth(
         name,
         description,
         delivery_fee,
-        minimum_order_value,
-        is_active: true
+        minimum_order: minimum_order_value,
+        active: true
       }]);
 
       if (error) throw error;

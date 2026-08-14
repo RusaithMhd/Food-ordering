@@ -4,22 +4,31 @@
 
 DO $$ 
 DECLARE
+    default_hotel_id UUID;
     default_branch_id UUID;
     cat_burgers_id UUID;
     cat_pizza_id UUID;
     cat_drinks_id UUID;
 BEGIN
-    -- 1. Ensure we have the default branch (from the previous fix)
+    -- 1. Ensure we have the default hotel and branch
+    SELECT id INTO default_hotel_id FROM hotels LIMIT 1;
+    
+    IF default_hotel_id IS NULL THEN
+        INSERT INTO hotels (name) VALUES ('Main Restaurant') RETURNING id INTO default_hotel_id;
+    END IF;
+
     SELECT id INTO default_branch_id FROM branches LIMIT 1;
     
     IF default_branch_id IS NULL THEN
-        RAISE EXCEPTION 'Default branch not found. Please run the seed_branch.sql script first.';
+        INSERT INTO branches (hotel_id, name, timezone, status) 
+        VALUES (default_hotel_id, 'Main Kitchen', 'UTC', 'OPEN')
+        RETURNING id INTO default_branch_id;
     END IF;
 
     -- ==========================================
     -- 2. Delivery Zones
     -- ==========================================
-    INSERT INTO delivery_zones (name, description, delivery_fee, minimum_order_value, is_active)
+    INSERT INTO delivery_zones (name, description, delivery_fee, minimum_order, active)
     VALUES 
         ('North Campus', 'All dorms and academic buildings in the North Campus area.', 2.50, 10.00, true),
         ('South Campus', 'South campus dormitories and stadium area.', 3.00, 15.00, true),
@@ -66,16 +75,6 @@ BEGIN
         (cat_drinks_id, default_branch_id, 'Ice Cold Cola', 'Classic cola served with ice.', 2.99, 2, true, 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?q=80&w=800&auto=format&fit=crop'),
         (cat_drinks_id, default_branch_id, 'Fresh Lemonade', 'House-made lemonade with freshly squeezed lemons and a hint of mint.', 3.99, 5, true, 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?q=80&w=800&auto=format&fit=crop');
 
-    -- ==========================================
-    -- 5. Rooms (Optional, for hotel context)
-    -- ==========================================
-    INSERT INTO rooms (branch_id, room_number, floor, status)
-    VALUES 
-        (default_branch_id, '101', '1st Floor', 'ACTIVE'),
-        (default_branch_id, '102', '1st Floor', 'ACTIVE'),
-        (default_branch_id, '201', '2nd Floor', 'ACTIVE'),
-        (default_branch_id, '202', '2nd Floor', 'ACTIVE'),
-        (default_branch_id, 'PH-1', 'Penthouse', 'ACTIVE')
-    ON CONFLICT DO NOTHING;
+    -- Rooms removed as this is a restaurant-only app.
 
 END $$;

@@ -84,7 +84,7 @@ export default async function DeliveryZonesPage() {
                 <div key={zone.id} className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm relative">
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="font-bold text-slate-900 text-lg pr-8">{zone.name}</h3>
-                    {zone.is_active ? (
+                    {zone.active ? (
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 uppercase tracking-wider absolute top-5 right-5">
                         Active
                       </span>
@@ -103,7 +103,7 @@ export default async function DeliveryZonesPage() {
                     </div>
                     <div>
                       <p className="text-xs font-bold text-slate-400 uppercase">Min. Order</p>
-                      <p className="font-semibold text-slate-700 flex items-center mt-0.5"><DollarSign className="w-3 h-3" />{zone.minimum_order_value.toFixed(2)}</p>
+                      <p className="font-semibold text-slate-700 flex items-center mt-0.5"><DollarSign className="w-3 h-3" />{zone.minimum_order.toFixed(2)}</p>
                     </div>
                   </div>
                   
@@ -151,10 +151,10 @@ export default async function DeliveryZonesPage() {
                           <div className="font-bold text-indigo-600">${zone.delivery_fee.toFixed(2)}</div>
                         </td>
                         <td className="py-4 px-6 text-right">
-                          <div className="font-semibold text-slate-700">${zone.minimum_order_value.toFixed(2)}</div>
+                          <div className="font-semibold text-slate-700">${zone.minimum_order.toFixed(2)}</div>
                         </td>
                         <td className="py-4 px-6 text-center">
-                          {zone.is_active ? (
+                          {zone.active ? (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
                               Active
                             </span>
