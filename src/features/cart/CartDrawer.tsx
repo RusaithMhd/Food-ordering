@@ -8,8 +8,10 @@ import { createOrder } from '@/actions/orders/create-order';
 import { useState } from 'react';
 import { useBranch } from '../branch/BranchContext';
 import { useAuth } from '../auth/AuthProvider';
+import { useRouter } from 'next/navigation';
 
 export function CartDrawer() {
+  const router = useRouter();
   const { items, isCartOpen, setIsCartOpen, removeItem, updateQuantity, subtotal, clearCart } = useCart();
   const { branchId, roomId } = useBranch();
   const { user } = useAuth();
@@ -53,7 +55,7 @@ export function CartDrawer() {
       if (result.success) {
         clearCart();
         setIsCartOpen(false);
-        alert('Order placed successfully! The kitchen is preparing your food.');
+        router.push('/orders');
       } else {
         setError(result.error || 'Failed to place order');
       }
