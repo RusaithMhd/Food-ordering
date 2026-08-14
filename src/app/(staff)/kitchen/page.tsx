@@ -2,7 +2,7 @@ import { createAdminClient } from '@/lib/supabase/server';
 import { updateOrderStatus } from '@/actions/orders/update-status';
 import { Button } from '@/components/ui/button';
 import { revalidatePath } from 'next/cache';
-import { ChefHat, Flame, Utensils, CheckCircle2, Clock, MapPin, RefreshCw } from 'lucide-react';
+import { ChefHat, Flame, Utensils, CheckCircle2, Clock, MapPin, RefreshCw, Phone, User } from 'lucide-react';
 
 async function getKitchenOrders() {
   const supabase = await createAdminClient();
@@ -26,6 +26,22 @@ async function getKitchenOrders() {
     return [];
   }
   return data || [];
+}
+
+function getDeliveryInfo(order: any) {
+  const snapshot = order.delivery_address_snapshot;
+  if (snapshot && snapshot.address_line1) {
+    return {
+      location: `${snapshot.address_line1}${snapshot.address_line2 ? `, ${snapshot.address_line2}` : ''}`,
+      recipientName: snapshot.recipient_name || null,
+      phone: snapshot.phone || null,
+      addressType: snapshot.address_type || null,
+    };
+  }
+  if (order.rooms?.room_number) {
+    return { location: `Room ${order.rooms.room_number}`, recipientName: null, phone: null, addressType: null };
+  }
+  return { location: 'Walk-in / Dine-in', recipientName: null, phone: null, addressType: null };
 }
 
 export default async function KitchenDashboard() {
@@ -55,7 +71,7 @@ export default async function KitchenDashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Incoming Column */}
+          {/* Incoming Orders Column */}
           <div className="flex flex-col h-[calc(100vh-180px)]">
             <div className="flex items-center justify-between bg-blue-50 border border-blue-100 px-5 py-3 rounded-t-2xl">
               <h2 className="text-lg font-bold text-blue-900 flex items-center">
@@ -73,27 +89,48 @@ export default async function KitchenDashboard() {
                   <p className="font-medium text-sm">No new orders</p>
                 </div>
               ) : placedOrders.map((order) => {
-                const isDelivery = order.customer_note?.includes('DELIVERY ADDRESS:');
-                const locationLabel = isDelivery 
-                  ? order.customer_note.replace('DELIVERY ADDRESS:', '').trim()
-                  : order.rooms?.room_number ? `Room ${order.rooms.room_number}` : 'Unknown Location';
+                const { location, recipientName, phone, addressType } = getDeliveryInfo(order);
 
                 return (
                   <div key={order.id} className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 hover:shadow-md transition-shadow relative overflow-hidden group">
                     <div className="absolute top-0 left-0 w-1 h-full bg-blue-500" />
-                    
+
                     <div className="flex justify-between items-start mb-4 pl-2">
-                      <div>
+                      <div className="flex-1">
                         <div className="flex items-center space-x-2">
                           <span className="font-black text-slate-900 text-lg">Order #{order.id.split('-')[0].toUpperCase()}</span>
                           <span className="text-xs font-bold bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md">
                             {new Date(order.placed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
-                        <div className="flex items-start space-x-1.5 mt-1 text-slate-600 font-medium text-sm">
-                          <MapPin className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
-                          <span className="leading-tight">{locationLabel}</span>
+                        
+                        {/* Location */}
+                        <div className="mt-2 space-y-1">
+                          <div className="flex items-start space-x-1.5 text-slate-700 text-sm">
+                            <MapPin className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
+                            <div>
+                              {addressType && <span className="text-xs font-bold text-blue-600 uppercase tracking-wider mr-1.5">{addressType.replace('_', ' ')}</span>}
+                              <span className="font-semibold">{location}</span>
+                            </div>
+                          </div>
+                          {recipientName && (
+                            <div className="flex items-center space-x-3 ml-5">
+                              <div className="flex items-center space-x-1 text-xs text-slate-600">
+                                <User className="w-3 h-3 text-slate-400" />
+                                <span className="font-semibold">{recipientName}</span>
+                              </div>
+                              {phone && (
+                                <div className="flex items-center space-x-1 text-xs text-slate-600">
+                                  <Phone className="w-3 h-3 text-slate-400" />
+                                  <span className="font-medium">{phone}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
+                      </div>
+                      <div className="text-right shrink-0 ml-3">
+                        <div className="text-lg font-black text-slate-900">${order.total.toFixed(2)}</div>
                       </div>
                     </div>
 
@@ -101,14 +138,22 @@ export default async function KitchenDashboard() {
                       <ul className="space-y-2.5">
                         {order.order_items?.map((item: any) => (
                           <li key={item.id} className="flex items-start">
-                            <span className="font-black text-blue-600 w-6 shrink-0">{item.quantity}x</span>
-                            <span className="font-semibold text-slate-800">{item.menu_items?.name}</span>
+                            <span className="font-black text-blue-600 w-8 shrink-0 text-base">{item.quantity}x</span>
+                            <div>
+                              <span className="font-semibold text-slate-800">{item.menu_items?.name}</span>
+                              {item.notes && (
+                                <div className="text-xs text-amber-700 mt-0.5 flex items-center">
+                                  <span className="bg-amber-100 text-amber-800 px-1 py-0.5 rounded text-[10px] font-bold mr-1">NOTE</span>
+                                  {item.notes}
+                                </div>
+                              )}
+                            </div>
                           </li>
                         ))}
                       </ul>
-                      {!isDelivery && order.customer_note && (
+                      {order.customer_note && (
                         <div className="mt-3 pt-3 border-t border-slate-200/60 text-sm font-medium text-amber-700 flex items-start">
-                          <span className="bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded text-xs font-bold mr-2 shrink-0">NOTE</span>
+                          <span className="bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded text-xs font-bold mr-2 shrink-0">ORDER NOTE</span>
                           {order.customer_note}
                         </div>
                       )}
@@ -125,7 +170,7 @@ export default async function KitchenDashboard() {
             </div>
           </div>
 
-          {/* Preparing Column */}
+          {/* Currently Cooking Column */}
           <div className="flex flex-col h-[calc(100vh-180px)]">
             <div className="flex items-center justify-between bg-amber-50 border border-amber-100 px-5 py-3 rounded-t-2xl">
               <h2 className="text-lg font-bold text-amber-900 flex items-center">
@@ -143,17 +188,14 @@ export default async function KitchenDashboard() {
                   <p className="font-medium text-sm">No orders currently cooking</p>
                 </div>
               ) : preparingOrders.map((order) => {
-                const isDelivery = order.customer_note?.includes('DELIVERY ADDRESS:');
-                const locationLabel = isDelivery 
-                  ? order.customer_note.replace('DELIVERY ADDRESS:', '').trim()
-                  : order.rooms?.room_number ? `Room ${order.rooms.room_number}` : 'Unknown Location';
+                const { location, recipientName, phone, addressType } = getDeliveryInfo(order);
 
                 return (
                   <div key={order.id} className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 hover:shadow-md transition-shadow relative overflow-hidden group">
                     <div className="absolute top-0 left-0 w-1 h-full bg-amber-500" />
-                    
+
                     <div className="flex justify-between items-start mb-4 pl-2">
-                      <div>
+                      <div className="flex-1">
                         <div className="flex items-center space-x-2">
                           <span className="font-black text-slate-900 text-lg">Order #{order.id.split('-')[0].toUpperCase()}</span>
                           <span className="flex h-2.5 w-2.5 relative ml-1">
@@ -161,10 +203,34 @@ export default async function KitchenDashboard() {
                             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
                           </span>
                         </div>
-                        <div className="flex items-start space-x-1.5 mt-1 text-slate-500 font-medium text-sm">
-                          <MapPin className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
-                          <span className="leading-tight">{locationLabel}</span>
+
+                        {/* Location */}
+                        <div className="mt-2 space-y-1">
+                          <div className="flex items-start space-x-1.5 text-slate-600 text-sm">
+                            <MapPin className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+                            <div>
+                              {addressType && <span className="text-xs font-bold text-amber-600 uppercase tracking-wider mr-1.5">{addressType.replace('_', ' ')}</span>}
+                              <span className="font-semibold">{location}</span>
+                            </div>
+                          </div>
+                          {recipientName && (
+                            <div className="flex items-center space-x-3 ml-5">
+                              <div className="flex items-center space-x-1 text-xs text-slate-500">
+                                <User className="w-3 h-3 text-slate-400" />
+                                <span className="font-semibold">{recipientName}</span>
+                              </div>
+                              {phone && (
+                                <div className="flex items-center space-x-1 text-xs text-slate-500">
+                                  <Phone className="w-3 h-3 text-slate-400" />
+                                  <span className="font-medium">{phone}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
+                      </div>
+                      <div className="text-right shrink-0 ml-3">
+                        <div className="text-lg font-black text-slate-900">${order.total.toFixed(2)}</div>
                       </div>
                     </div>
 
@@ -172,7 +238,7 @@ export default async function KitchenDashboard() {
                       <ul className="space-y-2.5">
                         {order.order_items?.map((item: any) => (
                           <li key={item.id} className="flex items-start">
-                            <span className="font-black text-amber-600 w-6 shrink-0">{item.quantity}x</span>
+                            <span className="font-black text-amber-600 w-8 shrink-0 text-base">{item.quantity}x</span>
                             <span className="font-semibold text-slate-800 line-through decoration-slate-300 decoration-2">{item.menu_items?.name}</span>
                           </li>
                         ))}

@@ -2,7 +2,7 @@ import { createAdminClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
 import { adminAuth } from '@/lib/firebase/server';
 import { redirect } from 'next/navigation';
-import { Clock, Package, CheckCircle2, ChevronRight, MapPin, ChefHat, Info } from 'lucide-react';
+import { Clock, Package, MapPin, Phone, User, DollarSign, Bike } from 'lucide-react';
 import Link from 'next/link';
 
 async function getMyOrders(uid: string) {
@@ -15,6 +15,7 @@ async function getMyOrders(uid: string) {
       order_items (
         quantity,
         total_price,
+        unit_price,
         menu_items ( name, image_url )
       )
     `)
@@ -24,19 +25,27 @@ async function getMyOrders(uid: string) {
   return data || [];
 }
 
+const STATUS_CONFIG: Record<string, { label: string; color: string; step: number }> = {
+  PLACED:           { label: 'Order Placed',     color: 'bg-blue-500',    step: 1 },
+  CONFIRMED:        { label: 'Confirmed',         color: 'bg-blue-600',    step: 1 },
+  PREPARING:        { label: 'Cooking',           color: 'bg-amber-500',   step: 2 },
+  READY:            { label: 'Out for Delivery',  color: 'bg-purple-500',  step: 3 },
+  OUT_FOR_DELIVERY: { label: 'On the way',        color: 'bg-purple-600',  step: 3 },
+  DELIVERED:        { label: 'Delivered',         color: 'bg-emerald-500', step: 4 },
+  CANCELLED:        { label: 'Cancelled',         color: 'bg-rose-500',    step: 0 },
+};
+
 export default async function MyOrdersPage() {
   const cookieStore = await cookies();
   const session = cookieStore.get('__session')?.value;
 
-  if (!session) {
-    redirect('/login');
-  }
+  if (!session) redirect('/login');
 
   let uid = '';
   try {
     const decoded = await adminAuth.verifySessionCookie(session, true);
     uid = decoded.uid;
-  } catch (error) {
+  } catch {
     redirect('/login');
   }
 
@@ -56,7 +65,7 @@ export default async function MyOrdersPage() {
               <Package className="w-8 h-8 text-slate-300" />
             </div>
             <h3 className="text-lg font-bold text-slate-900 mb-2">No orders yet</h3>
-            <p className="text-slate-500 mb-6">Looks like you haven't placed any delivery orders yet.</p>
+            <p className="text-slate-500 mb-6">Looks like you haven&apos;t placed any delivery orders yet.</p>
             <Link href="/" className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-sm font-bold rounded-xl text-white bg-slate-900 hover:bg-slate-800 shadow-md transition-colors">
               Browse Menu
             </Link>
@@ -65,69 +74,67 @@ export default async function MyOrdersPage() {
           <div className="space-y-6">
             {orders.map((order) => {
               const isActive = order.status !== 'DELIVERED' && order.status !== 'CANCELLED';
-              const isDeliveryAddress = order.customer_note?.includes('DELIVERY ADDRESS:');
-              const addressText = isDeliveryAddress 
-                ? order.customer_note.replace('DELIVERY ADDRESS:', '').trim() 
-                : order.customer_note || 'N/A';
+              const statusCfg = STATUS_CONFIG[order.status] ?? { label: order.status, color: 'bg-slate-500', step: 0 };
+              const snapshot = order.delivery_address_snapshot as any;
+
+              // Build address display
+              const addressLine = snapshot?.address_line1
+                ? `${snapshot.address_line1}${snapshot.address_line2 ? `, ${snapshot.address_line2}` : ''}`
+                : null;
+              const addressType = snapshot?.address_type?.replace(/_/g, ' ') ?? null;
+              const recipientName = snapshot?.recipient_name ?? null;
+              const phone = snapshot?.phone ?? null;
+              const deliveryFee = snapshot?.delivery_fee ?? order.delivery_fee ?? 0;
 
               return (
                 <div key={order.id} className="bg-white rounded-3xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-md transition-shadow duration-300">
-                  <div className={`p-6 border-b border-slate-100 ${isActive ? 'bg-indigo-50/50' : 'bg-white'}`}>
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+
+                  {/* Header */}
+                  <div className={`p-5 border-b border-slate-100 ${isActive ? 'bg-gradient-to-r from-indigo-50 to-blue-50/40' : 'bg-white'}`}>
+                    <div className="flex items-start justify-between gap-3">
                       <div>
-                        <div className="flex items-center space-x-3 mb-1">
-                          <span className="font-bold text-slate-900 text-lg">{order.branches?.name}</span>
-                          <span className={`px-2.5 py-1 text-[10px] font-black tracking-wider uppercase rounded-full border ${
-                            order.status === 'PLACED' ? 'bg-blue-100 text-blue-700 border-blue-200' :
-                            order.status === 'PREPARING' ? 'bg-amber-100 text-amber-700 border-amber-200' :
-                            order.status === 'READY' ? 'bg-purple-100 text-purple-700 border-purple-200' :
-                            order.status === 'DELIVERED' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
-                            'bg-slate-100 text-slate-700 border-slate-200'
-                          }`}>
-                            {order.status === 'READY' ? 'OUT FOR DELIVERY' : order.status}
+                        <div className="flex items-center flex-wrap gap-2 mb-1">
+                          <span className="font-bold text-slate-900 text-base">{order.branches?.name ?? 'Restaurant'}</span>
+                          <span className={`px-2.5 py-0.5 text-[10px] font-black tracking-wider uppercase rounded-full text-white ${statusCfg.color}`}>
+                            {statusCfg.label}
                           </span>
                         </div>
-                        <div className="text-sm font-medium text-slate-500 flex items-center">
-                          <Clock className="w-3.5 h-3.5 mr-1.5" />
+                        <div className="text-xs font-medium text-slate-400 flex items-center">
+                          <Clock className="w-3 h-3 mr-1" />
                           {new Date(order.placed_at).toLocaleString()}
                         </div>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right shrink-0">
                         <div className="text-2xl font-black text-slate-900">${order.total.toFixed(2)}</div>
-                        <div className="text-xs font-semibold text-slate-400 mt-1">Cash on Delivery</div>
+                        <div className="text-xs font-semibold text-slate-400 mt-0.5">Cash on Delivery</div>
                       </div>
                     </div>
                   </div>
 
-                  {isActive && (
-                    <div className="px-6 py-5 bg-slate-50/50 border-b border-slate-100">
-                      <div className="relative">
-                        <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-slate-200">
-                          <div style={{ width: 
-                            order.status === 'PLACED' ? '25%' :
-                            order.status === 'PREPARING' ? '50%' :
-                            order.status === 'READY' ? '75%' : '100%'
-                          }} className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center ${
-                            order.status === 'PLACED' ? 'bg-blue-500' :
-                            order.status === 'PREPARING' ? 'bg-amber-500' :
-                            order.status === 'READY' ? 'bg-purple-500' : 'bg-emerald-500'
-                          } transition-all duration-1000`}></div>
-                        </div>
-                        <div className="flex justify-between text-xs font-bold text-slate-400 px-1">
-                          <span className={order.status === 'PLACED' ? 'text-blue-600' : ''}>Accepted</span>
-                          <span className={order.status === 'PREPARING' ? 'text-amber-600' : ''}>Cooking</span>
-                          <span className={order.status === 'READY' ? 'text-purple-600' : ''}>On the way</span>
-                          <span className={order.status === 'DELIVERED' ? 'text-emerald-600' : ''}>Delivered</span>
-                        </div>
+                  {/* Progress Bar */}
+                  {isActive && statusCfg.step > 0 && (
+                    <div className="px-5 py-4 bg-slate-50/60 border-b border-slate-100">
+                      <div className="overflow-hidden h-1.5 rounded-full bg-slate-200 mb-3">
+                        <div
+                          style={{ width: `${(statusCfg.step / 4) * 100}%` }}
+                          className={`h-full rounded-full ${statusCfg.color} transition-all duration-700`}
+                        />
+                      </div>
+                      <div className="flex justify-between text-[11px] font-bold text-slate-400 px-0.5">
+                        {['Placed', 'Cooking', 'On the way', 'Delivered'].map((label, i) => (
+                          <span key={label} className={statusCfg.step === i + 1 ? 'text-slate-700' : ''}>{label}</span>
+                        ))}
                       </div>
                     </div>
                   )}
 
-                  <div className="p-6">
-                    <div className="space-y-4">
+                  {/* Items */}
+                  <div className="p-5">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Items Ordered</p>
+                    <div className="space-y-3 mb-5">
                       {order.order_items.map((item: any, idx: number) => (
-                        <div key={idx} className="flex items-center space-x-4">
-                          <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 overflow-hidden shrink-0">
+                        <div key={idx} className="flex items-center space-x-3">
+                          <div className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-100 overflow-hidden shrink-0">
                             {item.menu_items?.image_url ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img src={item.menu_items.image_url} alt="" className="w-full h-full object-cover" />
@@ -136,25 +143,66 @@ export default async function MyOrdersPage() {
                             )}
                           </div>
                           <div className="flex-1">
-                            <div className="font-bold text-slate-900 text-sm">
-                              {item.quantity}x {item.menu_items?.name}
+                            <div className="font-semibold text-slate-900 text-sm">
+                              <span className="text-slate-500 font-bold mr-1">{item.quantity}x</span>
+                              {item.menu_items?.name}
                             </div>
+                            <div className="text-xs text-slate-400">${item.unit_price?.toFixed(2)} each</div>
                           </div>
-                          <div className="font-semibold text-slate-700 text-sm">
-                            ${item.total_price.toFixed(2)}
-                          </div>
+                          <div className="font-bold text-slate-700 text-sm">${item.total_price.toFixed(2)}</div>
                         </div>
                       ))}
                     </div>
 
-                    <div className="mt-6 pt-6 border-t border-slate-100 flex items-start space-x-3">
-                      <div className="mt-0.5 bg-indigo-50 p-1.5 rounded-lg text-indigo-500">
-                        <MapPin className="w-4 h-4" />
+                    {/* Price Breakdown */}
+                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 mb-5 space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500 font-medium">Subtotal</span>
+                        <span className="font-semibold text-slate-700">${order.subtotal.toFixed(2)}</span>
                       </div>
-                      <div>
-                        <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Delivery Destination</div>
-                        <div className="text-sm font-medium text-slate-900">{addressText}</div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500 font-medium flex items-center">
+                          <Bike className="w-3.5 h-3.5 mr-1.5" /> Delivery Fee
+                        </span>
+                        <span className="font-semibold text-slate-700">${Number(deliveryFee).toFixed(2)}</span>
                       </div>
+                      <div className="flex justify-between text-sm pt-2 border-t border-slate-200">
+                        <span className="font-bold text-slate-900">Total</span>
+                        <span className="font-black text-slate-900">${order.total.toFixed(2)}</span>
+                      </div>
+                    </div>
+
+                    {/* Delivery Address */}
+                    <div className="border border-slate-200 rounded-2xl p-4 bg-white">
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center">
+                        <MapPin className="w-3.5 h-3.5 mr-1.5 text-indigo-400" /> Delivery Details
+                      </p>
+                      {addressLine ? (
+                        <div className="space-y-2">
+                          {addressType && (
+                            <span className="inline-block bg-indigo-50 text-indigo-700 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full">
+                              {addressType}
+                            </span>
+                          )}
+                          <p className="text-sm font-semibold text-slate-900">{addressLine}</p>
+                          <div className="flex flex-wrap gap-3 mt-1">
+                            {recipientName && (
+                              <div className="flex items-center text-xs text-slate-600 space-x-1">
+                                <User className="w-3.5 h-3.5 text-slate-400" />
+                                <span className="font-semibold">{recipientName}</span>
+                              </div>
+                            )}
+                            {phone && (
+                              <div className="flex items-center text-xs text-slate-600 space-x-1">
+                                <Phone className="w-3.5 h-3.5 text-slate-400" />
+                                <span className="font-medium">{phone}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-slate-400 font-medium italic">No delivery address recorded</p>
+                      )}
                     </div>
                   </div>
                 </div>

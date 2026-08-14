@@ -84,15 +84,21 @@ export async function createOrder(data: CreateOrderData) {
       address_line2: address.address_line2,
       landmark: address.landmark,
       zone_id: address.zone_id,
-      delivery_fee: delivery_fee
+      delivery_fee: delivery_fee,
+      recipient_name: address.recipient_name,
+      phone: address.phone
     };
+
+    // Fetch the default branch
+    const { data: defaultBranch } = await supabase.from('branches').select('id').limit(1).single();
 
     // 1. Insert Order
     const { data: newOrder, error: orderError } = await supabase
       .from('orders')
       .insert({
+        branch_id: defaultBranch?.id,
         customer_id: data.customer_id,
-        delivery_address_id: data.delivery_address_id,
+        delivery_zone_id: address.zone_id,
         delivery_address_snapshot,
         subtotal,
         tax,
