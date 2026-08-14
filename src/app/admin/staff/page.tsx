@@ -40,7 +40,7 @@ export default async function StaffManagementPage() {
           <h2 className="text-xl font-semibold mb-4">Assign Role</h2>
           <p className="text-sm text-gray-500 mb-4">The user must sign in to the app at least once before you can assign them a role.</p>
           
-          <form action={assignRole} className="space-y-4">
+          <form action={async (fd) => { 'use server'; await assignRole(fd); }} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Staff Email</label>
               <input type="email" name="email" required placeholder="e.g. chef@hotel.com" className="w-full px-3 py-2 border border-gray-300 rounded-md sm:text-sm" />

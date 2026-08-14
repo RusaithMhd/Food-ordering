@@ -33,7 +33,7 @@ export default async function BranchManagementPage() {
         <div className="space-y-6">
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
             <h2 className="text-xl font-semibold mb-4">Add New Branch</h2>
-            <form action={createBranch} className="space-y-4">
+            <form action={async (fd) => { 'use server'; await createBranch(fd); }} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Hotel</label>
                 <select name="hotel_id" required className="w-full px-3 py-2 border border-gray-300 rounded-md sm:text-sm bg-white">
@@ -73,7 +73,7 @@ export default async function BranchManagementPage() {
         <div className="space-y-6">
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
             <h2 className="text-xl font-semibold mb-4">Add New Room</h2>
-            <form action={createRoom} className="space-y-4">
+            <form action={async (fd) => { 'use server'; await createRoom(fd); }} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Branch</label>
                 <select name="branch_id" required className="w-full px-3 py-2 border border-gray-300 rounded-md sm:text-sm bg-white">

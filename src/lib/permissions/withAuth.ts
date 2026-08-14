@@ -20,7 +20,7 @@ export function withAuth<T extends (...args: any[]) => Promise<any>>(
     requireUser?: boolean;
   }
 ) {
-  return async (...args: Parameters<T>): Promise<ReturnType<T>> => {
+  return async (...args: Parameters<T>): Promise<Awaited<ReturnType<T>>> => {
     const cookieStore = await cookies();
     const session = cookieStore.get('__session')?.value;
 

@@ -20,15 +20,13 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     
     // Check role in Supabase
     const supabase = await createAdminClient();
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select(`
-        roles ( name )
-      `)
-      .eq('id', decodedToken.uid)
+    const { data: userRoleData } = await supabase
+      .from('user_roles')
+      .select('roles ( name )')
+      .eq('user_id', decodedToken.uid)
       .single();
 
-    userRole = profile?.roles?.name || '';
+    userRole = (userRoleData?.roles as any)?.name || '';
     
     if (userRole !== 'ADMIN' && userRole !== 'MANAGER' && userRole !== 'SUPER_ADMIN') {
       return (
