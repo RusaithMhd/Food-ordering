@@ -71,15 +71,7 @@ export default async function AdminMenuPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Kitchen <span className="text-rose-500">*</span></label>
-                <select name="branch_id" required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all appearance-none cursor-pointer">
-                  <option value="">Select Kitchen</option>
-                  {branches.map(b => (
-                    <option key={b.id} value={b.id}>{b.name}</option>
-                  ))}
-                </select>
-              </div>
+              <input type="hidden" name="branch_id" value={branches[0]?.id || ''} />
 
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Category <span className="text-rose-500">*</span></label>
@@ -164,8 +156,7 @@ export default async function AdminMenuPage() {
                               {item.name}
                               {item.is_vegetarian && <span title="Vegetarian"><Leaf className="w-3.5 h-3.5 ml-1.5 text-emerald-500" /></span>}
                             </div>
-                            <div className="text-xs font-medium text-slate-500 mt-0.5">{item.branches?.name}</div>
-                          </div>
+                            </div>
                         </div>
                       </td>
                       <td className="px-5 py-4 whitespace-nowrap text-sm text-slate-900 font-extrabold">

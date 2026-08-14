@@ -24,9 +24,9 @@ export async function verifySession(idToken: string | null) {
       .from('profiles')
       .upsert({
         id: decodedToken.uid,
-        email: decodedToken.email,
-        full_name: decodedToken.name || decodedToken.email?.split('@')[0],
-        avatar_url: decodedToken.picture,
+        email: decodedToken.email || `${decodedToken.uid}@anonymous.local`,
+        full_name: decodedToken.name || (decodedToken.email ? decodedToken.email.split('@')[0] : 'Guest User'),
+        avatar_url: decodedToken.picture || '',
         updated_at: new Date().toISOString(),
       }, { onConflict: 'id' });
 
@@ -45,8 +45,19 @@ export async function verifySession(idToken: string | null) {
       secure: process.env.NODE_ENV === 'production',
       path: '/',
     });
+    // 4. Fetch User Role
+    let role = null;
+    const { data: roleData } = await supabaseAdmin
+      .from('user_roles')
+      .select('roles(name)')
+      .eq('user_id', decodedToken.uid)
+      .single();
+      
+    if (roleData && roleData.roles) {
+      role = (roleData.roles as any).name;
+    }
 
-    return { success: true };
+    return { success: true, role };
   } catch (error) {
     logger.error('Session verification failed', { error });
     cookieStore.delete('__session');

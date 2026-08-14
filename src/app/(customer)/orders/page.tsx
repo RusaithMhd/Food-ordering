@@ -58,7 +58,7 @@ export default async function MyOrdersPage() {
             <h3 className="text-lg font-bold text-slate-900 mb-2">No orders yet</h3>
             <p className="text-slate-500 mb-6">Looks like you haven't placed any delivery orders yet.</p>
             <Link href="/" className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-sm font-bold rounded-xl text-white bg-slate-900 hover:bg-slate-800 shadow-md transition-colors">
-              Browse Kitchens
+              Browse Menu
             </Link>
           </div>
         ) : (

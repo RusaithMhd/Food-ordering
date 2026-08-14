@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signInWithPopup } from 'firebase/auth';
+import { useAuth } from '@/features/auth/AuthProvider';
 import { auth, googleProvider } from '@/lib/firebase/client';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -10,16 +11,30 @@ import { Hotel } from 'lucide-react';
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { user, userRole, loading } = useAuth();
+
+  useEffect(() => {
+    if (user && !loading) {
+      if (userRole === 'SUPER_ADMIN' || userRole === 'ADMIN' || userRole === 'MANAGER') {
+        router.push('/admin');
+      } else if (userRole === 'KITCHEN') {
+        router.push('/kitchen');
+      } else if (userRole === 'DELIVERY') {
+        router.push('/delivery');
+      } else {
+        router.push('/');
+      }
+    }
+  }, [user, userRole, loading, router]);
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
       await signInWithPopup(auth, googleProvider);
-      router.push('/');
+      // The useEffect above will handle the redirect once the role is fetched
     } catch (error: any) {
       console.error('Google sign-in failed:', error);
       alert(`Sign in failed: ${error?.message || 'Unknown error'}`);
-    } finally {
       setIsLoading(false);
     }
   };

@@ -86,22 +86,7 @@ export default function CustomerMenu() {
   if (!branchId) {
     return (
       <div className="min-h-screen flex flex-col relative overflow-hidden bg-white">
-        {/* Header */}
-        <header className="absolute top-0 w-full z-20 px-6 py-5 flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <div className="bg-slate-900 p-2 rounded-xl shadow-lg">
-              <Truck className="h-5 w-5 text-white" />
-            </div>
-            <span className="font-bold text-xl tracking-tight text-slate-900">SwiftDelivery</span>
-          </div>
-          {!user ? (
-            <Link href="/login">
-              <Button variant="ghost" className="font-medium">Sign In</Button>
-            </Link>
-          ) : (
-            <span className="text-sm font-medium text-slate-600">Hi, {user.displayName?.split(' ')[0]}</span>
-          )}
-        </header>
+        {/* Header removed in favor of global Navbar */}
 
         {/* Hero Section */}
         <div className="flex-1 flex flex-col justify-center items-center px-6 relative pt-20 pb-12 text-center">
@@ -120,7 +105,7 @@ export default function CustomerMenu() {
               </span>
             </h1>
             <p className="text-lg md:text-xl text-slate-500 max-w-xl mx-auto font-medium">
-              Select your nearest kitchen below to explore our curated menu of delicious meals.
+              Select your location below to explore our curated menu of delicious meals.
             </p>
           </div>
         </div>
@@ -130,7 +115,7 @@ export default function CustomerMenu() {
           <div className="max-w-4xl mx-auto">
             <h2 className="text-2xl font-bold text-slate-900 mb-8 flex items-center">
               <MapPin className="mr-2 h-6 w-6 text-slate-400" />
-              Available Kitchens
+              Available Menus
             </h2>
             
             {isLoading ? (
@@ -156,7 +141,7 @@ export default function CustomerMenu() {
                 ))}
                 {availableBranches.length === 0 && !isLoading && (
                   <div className="col-span-full p-8 text-center bg-white rounded-3xl border border-slate-100 border-dashed">
-                    <p className="text-slate-500 font-medium">No kitchens are currently open for delivery.</p>
+                    <p className="text-slate-500 font-medium">No menus are currently available.</p>
                   </div>
                 )}
               </div>
@@ -180,34 +165,19 @@ export default function CustomerMenu() {
       <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-slate-200/60 shadow-sm transition-all duration-300">
         <div className="px-5 py-4 flex justify-between items-center max-w-4xl mx-auto">
           <div className="flex items-center space-x-3">
-            <button 
-              onClick={() => setContext('')} 
-              className="p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors mr-1"
-              title="Change Kitchen"
-            >
-              ←
-            </button>
+            {/* Back button removed since there is only one kitchen */}
             <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center shadow-md shadow-amber-500/20">
               <Truck className="h-5 w-5 text-white" />
             </div>
             <div>
               <h1 className="font-bold text-xl tracking-tight text-slate-900 leading-none mb-1">
-                {branch?.name || 'Kitchen'}
+                Our Menu
               </h1>
               <p className="text-sm font-medium text-slate-500 leading-none">Delivering to you</p>
             </div>
           </div>
           
           <div className="flex items-center space-x-4">
-            {!user ? (
-              <Link href="/login">
-                <Button variant="ghost" className="text-sm font-medium hover:bg-slate-100 rounded-full px-5 hidden sm:flex">
-                  Sign In
-                </Button>
-              </Link>
-            ) : (
-              <span className="text-sm font-medium text-slate-600 hidden sm:block">Hi, {user.displayName?.split(' ')[0]}</span>
-            )}
             
             <button 
               onClick={() => setIsCartOpen(true)}

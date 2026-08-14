@@ -82,6 +82,15 @@ export function BranchProvider({ children }: { children: React.ReactNode }) {
           // Invalid branch
           clearContext();
         }
+      } else {
+        // No branch in URL or local storage, fetch all branches to see if we can auto-select
+        const branches = await hotelService.getBranches();
+        if (branches.length === 1) {
+          const singleBranch = branches[0];
+          setBranchId(singleBranch.id);
+          setBranch(singleBranch);
+          localStorage.setItem('branchId', singleBranch.id);
+        }
       }
 
       setIsLoading(false);

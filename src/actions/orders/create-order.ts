@@ -1,13 +1,11 @@
 'use server';
 
 import { createAdminClient } from '@/lib/supabase/server';
-import { cookies } from 'next/headers';
-import { adminAuth } from '@/lib/firebase/server';
+import { getUser } from '@/lib/auth/getUser';
 import { logger } from '@/lib/logger';
 
 interface CreateOrderData {
-  branch_id: string;
-  room_id?: string;
+  delivery_address_id: string;
   customer_id: string;
   items: {
     menu_item_id: string;
@@ -19,37 +17,83 @@ interface CreateOrderData {
 }
 
 export async function createOrder(data: CreateOrderData) {
-  const cookieStore = await cookies();
-  const session = cookieStore.get('__session')?.value;
+  const { user } = await getUser();
 
-  if (!session) {
-    return { success: false, error: 'Unauthorized' };
+  if (!user || user.uid !== data.customer_id) {
+    return { success: false, error: 'Unauthorized or invalid user context' };
   }
 
   try {
-    const decodedToken = await adminAuth.verifySessionCookie(session, true);
-    if (decodedToken.uid !== data.customer_id) {
-       return { success: false, error: 'Invalid user context' };
-    }
-
     const supabase = await createAdminClient();
 
-    // In a production app, we MUST query the DB to get the actual prices of the items here
-    // rather than trusting the client-provided prices, to avoid tampering.
-    // For the MVP, we will trust the client data for unit_price but calculate total on server.
+    // Securely fetch actual prices from the database
+    const menuItemIds = data.items.map(i => i.menu_item_id);
+    const { data: menuItems, error: menuError } = await supabase
+      .from('menu_items')
+      .select('id, base_price')
+      .in('id', menuItemIds)
+      .eq('is_active', true);
 
-    const subtotal = data.items.reduce((sum, item) => sum + (item.unit_price * item.quantity), 0);
-    const tax = 0;
-    const delivery_fee = 0;
+    if (menuError || !menuItems || menuItems.length !== data.items.length) {
+      logger.error('Failed to validate menu items or some items are inactive', { error: menuError });
+      return { success: false, error: 'One or more items are unavailable or prices could not be verified' };
+    }
+
+    // Map fetched prices for secure calculation
+    const priceMap = new Map(menuItems.map(item => [item.id, item.base_price]));
+
+    let subtotal = 0;
+    const secureOrderItems = data.items.map(item => {
+      const actualUnitPrice = Number(priceMap.get(item.menu_item_id) || 0);
+      const totalItemPrice = actualUnitPrice * Number(item.quantity);
+      subtotal += totalItemPrice;
+
+      return {
+        menu_item_id: item.menu_item_id,
+        quantity: item.quantity,
+        unit_price: actualUnitPrice,
+        total_price: totalItemPrice,
+        notes: item.notes || ''
+      };
+    });
+
+    // Securely fetch address and delivery zone fee
+    const { data: address, error: addressError } = await supabase
+      .from('delivery_addresses')
+      .select('*, delivery_zones(delivery_fee, is_active)')
+      .eq('id', data.delivery_address_id)
+      .eq('customer_id', data.customer_id)
+      .single();
+
+    if (addressError || !address) {
+      return { success: false, error: 'Invalid delivery address' };
+    }
+
+    if (!address.delivery_zones?.is_active) {
+      return { success: false, error: 'Delivery zone is currently inactive' };
+    }
+
+    const tax = 0; // Tax calculation can be added here
+    const delivery_fee = address.delivery_zones.delivery_fee || 0;
     const total = subtotal + tax + delivery_fee;
+
+    // Create immutable snapshot of the address
+    const delivery_address_snapshot = {
+      address_type: address.address_type,
+      address_line1: address.address_line1,
+      address_line2: address.address_line2,
+      landmark: address.landmark,
+      zone_id: address.zone_id,
+      delivery_fee: delivery_fee
+    };
 
     // 1. Insert Order
     const { data: newOrder, error: orderError } = await supabase
       .from('orders')
       .insert({
-        branch_id: data.branch_id,
-        room_id: data.room_id,
         customer_id: data.customer_id,
+        delivery_address_id: data.delivery_address_id,
+        delivery_address_snapshot,
         subtotal,
         tax,
         delivery_fee,
@@ -65,14 +109,10 @@ export async function createOrder(data: CreateOrderData) {
       return { success: false, error: 'Database error creating order' };
     }
 
-    // 2. Insert Order Items
-    const orderItemsToInsert = data.items.map(item => ({
+    // 2. Insert Secure Order Items
+    const orderItemsToInsert = secureOrderItems.map(item => ({
       order_id: newOrder.id,
-      menu_item_id: item.menu_item_id,
-      quantity: item.quantity,
-      unit_price: item.unit_price,
-      total_price: item.unit_price * item.quantity,
-      notes: item.notes || ''
+      ...item
     }));
 
     const { error: itemsError } = await supabase

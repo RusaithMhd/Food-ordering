@@ -1,34 +1,13 @@
 import { ReactNode } from 'react';
 import Link from 'next/link';
-import { cookies } from 'next/headers';
-import { adminAuth } from '@/lib/firebase/server';
-import { createAdminClient } from '@/lib/supabase/server';
+import { getUser } from '@/lib/auth/getUser';
 import { redirect } from 'next/navigation';
-import { LayoutDashboard, Menu as MenuIcon, Store, Users } from 'lucide-react';
+import { LayoutDashboard, Menu as MenuIcon, Store, Users, Tags, Map } from 'lucide-react';
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
-  const cookieStore = await cookies();
-  const session = cookieStore.get('__session')?.value;
+  const { role } = await getUser();
 
-  if (!session) {
-    redirect('/login?redirect=/admin');
-  }
-
-  let userRole = '';
-  try {
-    const decodedToken = await adminAuth.verifySessionCookie(session, true);
-    
-    // Check role in Supabase
-    const supabase = await createAdminClient();
-    const { data: userRoleData } = await supabase
-      .from('user_roles')
-      .select('roles ( name )')
-      .eq('user_id', decodedToken.uid)
-      .single();
-
-    userRole = (userRoleData?.roles as any)?.name || '';
-    
-    if (userRole !== 'ADMIN' && userRole !== 'MANAGER' && userRole !== 'SUPER_ADMIN') {
+  if (!role || (role !== 'ADMIN' && role !== 'MANAGER' && role !== 'SUPER_ADMIN')) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
           <div className="bg-white p-8 rounded-xl shadow-sm text-center max-w-md">
@@ -41,15 +20,25 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         </div>
       );
     }
-  } catch (error) {
-    console.error('Admin layout auth error:', error);
-    redirect('/login');
-  }
 
   return (
-    <div className="flex h-screen bg-[#FAFAFA] font-sans selection:bg-indigo-100 selection:text-indigo-900">
-      {/* Sidebar */}
-      <aside className="w-64 bg-slate-950 text-slate-300 flex flex-col shadow-2xl z-20">
+    <div className="flex flex-col md:flex-row h-screen bg-[#FAFAFA] font-sans selection:bg-indigo-100 selection:text-indigo-900">
+      
+      {/* Mobile Top Bar */}
+      <div className="md:hidden flex items-center justify-between h-16 bg-slate-950 px-4 shrink-0 shadow-sm z-30">
+        <div className="flex items-center">
+          <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center mr-3 shadow-lg shadow-indigo-500/20">
+            <LayoutDashboard className="h-4 w-4 text-white" />
+          </div>
+          <h1 className="font-bold text-lg tracking-tight text-white">Admin Panel</h1>
+        </div>
+        <Link href="/" className="text-xs font-medium text-indigo-400 hover:text-indigo-300 px-3 py-1.5 rounded-md bg-white/10">
+          Exit
+        </Link>
+      </div>
+
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:flex w-64 bg-slate-950 text-slate-300 flex-col shadow-2xl z-20 shrink-0">
         <div className="h-16 flex items-center px-6 border-b border-white/10">
           <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center mr-3 shadow-lg shadow-indigo-500/20">
             <LayoutDashboard className="h-4 w-4 text-white" />
@@ -62,9 +51,14 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             <LayoutDashboard className="h-5 w-5 text-slate-500 group-hover:text-indigo-400 transition-colors" />
             <span>Dashboard</span>
           </Link>
-          <Link href="/admin/branches" className="flex items-center space-x-3 px-3 py-2.5 rounded-xl transition-all duration-200 hover:bg-white/10 hover:text-white font-medium group">
-            <Store className="h-5 w-5 text-slate-500 group-hover:text-indigo-400 transition-colors" />
-            <span>Branches &amp; Rooms</span>
+
+          <Link href="/admin/zones" className="flex items-center space-x-3 px-3 py-2.5 rounded-xl transition-all duration-200 hover:bg-white/10 hover:text-white font-medium group">
+            <Map className="h-5 w-5 text-slate-500 group-hover:text-indigo-400 transition-colors" />
+            <span>Delivery Zones</span>
+          </Link>
+          <Link href="/admin/categories" className="flex items-center space-x-3 px-3 py-2.5 rounded-xl transition-all duration-200 hover:bg-white/10 hover:text-white font-medium group">
+            <Tags className="h-5 w-5 text-slate-500 group-hover:text-indigo-400 transition-colors" />
+            <span>Categories</span>
           </Link>
           <Link href="/admin/menu" className="flex items-center space-x-3 px-3 py-2.5 rounded-xl transition-all duration-200 hover:bg-white/10 hover:text-white font-medium group">
             <MenuIcon className="h-5 w-5 text-slate-500 group-hover:text-indigo-400 transition-colors" />
@@ -79,11 +73,11 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         <div className="p-5 border-t border-white/10 bg-slate-900/50">
           <div className="flex items-center space-x-3 mb-3">
             <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center border border-white/10">
-              <span className="text-xs font-bold text-white">{userRole.charAt(0)}</span>
+              <span className="text-xs font-bold text-white">{role?.charAt(0)}</span>
             </div>
             <div>
               <div className="text-xs font-medium text-slate-400 uppercase tracking-wider">Role</div>
-              <div className="text-sm font-bold text-white leading-tight">{userRole}</div>
+              <div className="text-sm font-bold text-white leading-tight">{role}</div>
             </div>
           </div>
           <Link href="/" className="text-xs font-medium text-indigo-400 hover:text-indigo-300 transition-colors flex items-center">
@@ -93,11 +87,35 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-8 lg:p-12">
+      <main className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12 pb-24 md:pb-8">
         <div className="max-w-6xl mx-auto">
           {children}
         </div>
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around items-center h-16 z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] pb-safe px-1">
+        <Link href="/admin" className="flex flex-col items-center justify-center w-full h-full text-slate-500 hover:text-indigo-600 transition-colors">
+          <LayoutDashboard className="h-[22px] w-[22px] mb-1" />
+          <span className="text-[9px] font-bold tracking-tight">Home</span>
+        </Link>
+        <Link href="/admin/zones" className="flex flex-col items-center justify-center w-full h-full text-slate-500 hover:text-indigo-600 transition-colors">
+          <Map className="h-[22px] w-[22px] mb-1" />
+          <span className="text-[9px] font-bold tracking-tight">Zones</span>
+        </Link>
+        <Link href="/admin/categories" className="flex flex-col items-center justify-center w-full h-full text-slate-500 hover:text-indigo-600 transition-colors">
+          <Tags className="h-[22px] w-[22px] mb-1" />
+          <span className="text-[9px] font-bold tracking-tight">Categories</span>
+        </Link>
+        <Link href="/admin/menu" className="flex flex-col items-center justify-center w-full h-full text-slate-500 hover:text-indigo-600 transition-colors">
+          <MenuIcon className="h-[22px] w-[22px] mb-1" />
+          <span className="text-[9px] font-bold tracking-tight">Menu</span>
+        </Link>
+        <Link href="/admin/staff" className="flex flex-col items-center justify-center w-full h-full text-slate-500 hover:text-indigo-600 transition-colors">
+          <Users className="h-[22px] w-[22px] mb-1" />
+          <span className="text-[9px] font-bold tracking-tight">Staff</span>
+        </Link>
+      </nav>
     </div>
   );
 }

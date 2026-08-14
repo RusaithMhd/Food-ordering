@@ -39,7 +39,7 @@ CREATE TABLE role_permissions (
 );
 
 CREATE TABLE profiles (
-    id UUID PRIMARY KEY, -- Map to Firebase UID
+    id VARCHAR(255) PRIMARY KEY, -- Map to Firebase UID
     email VARCHAR(255) UNIQUE,
     full_name VARCHAR(255),
     phone_number VARCHAR(50),
@@ -49,7 +49,7 @@ CREATE TABLE profiles (
 );
 
 CREATE TABLE user_roles (
-    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    user_id VARCHAR(255) REFERENCES profiles(id) ON DELETE CASCADE,
     role_id UUID REFERENCES roles(id) ON DELETE CASCADE,
     hotel_id UUID, -- NULL means global
     branch_id UUID, -- NULL means hotel-wide
@@ -129,7 +129,7 @@ CREATE TABLE inventory_items (
 CREATE TABLE orders (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     branch_id UUID REFERENCES branches(id) ON DELETE CASCADE,
-    customer_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
+    customer_id VARCHAR(255) REFERENCES profiles(id) ON DELETE SET NULL,
     room_id UUID REFERENCES rooms(id) ON DELETE SET NULL,
     status order_status DEFAULT 'PLACED',
     priority priority_level DEFAULT 'NORMAL',

@@ -6,6 +6,7 @@ import { AuthProvider } from "@/features/auth/AuthProvider";
 import { BranchProvider } from "@/features/branch/BranchContext";
 import { CartProvider } from "@/features/cart/CartContext";
 import { CartDrawer } from "@/features/cart/CartDrawer";
+import { Navbar } from "@/components/navigation/Navbar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,6 +38,7 @@ export default function RootLayout({
           <Suspense fallback={<div>Loading context...</div>}>
             <BranchProvider>
               <CartProvider>
+                <Navbar />
                 {children}
                 <CartDrawer />
               </CartProvider>
