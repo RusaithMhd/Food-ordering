@@ -28,7 +28,7 @@ BEGIN
     -- ==========================================
     -- 2. Delivery Zones
     -- ==========================================
-    INSERT INTO delivery_zones (name, description, delivery_fee, minimum_order, active)
+    INSERT INTO delivery_zones (name, description, delivery_fee, minimum_order, is_active)
     VALUES 
         ('North Campus', 'All dorms and academic buildings in the North Campus area.', 2.50, 10.00, true),
         ('South Campus', 'South campus dormitories and stadium area.', 3.00, 15.00, true),
