@@ -15,14 +15,19 @@ export function CartDrawer() {
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deliveryAddress, setDeliveryAddress] = useState('');
 
   const handleCheckout = async () => {
     if (!branchId) {
-      setError('Please scan a valid room QR code to place an order.');
+      setError('Please select a kitchen to place an order.');
       return;
     }
-    if (!roomId && !user) {
-      setError('You must either sign in or scan a room QR code to order.');
+    if (!user) {
+      setError('You must sign in to place a delivery order.');
+      return;
+    }
+    if (!deliveryAddress.trim()) {
+      setError('Please provide a delivery address.');
       return;
     }
 
@@ -34,6 +39,10 @@ export function CartDrawer() {
       orderData.append('branch_id', branchId);
       if (roomId) orderData.append('room_id', roomId);
       orderData.append('payment_method', 'CASH_ON_DELIVERY');
+      
+      // Save delivery address to customer_note for MVP
+      orderData.append('customer_note', `DELIVERY ADDRESS: ${deliveryAddress}`);
+      
       orderData.append('items', JSON.stringify(
         items.map(i => ({ menu_item_id: i.menuItem.id, quantity: i.quantity, unit_price: i.menuItem.base_price }))
       ));
@@ -139,13 +148,23 @@ export function CartDrawer() {
               </div>
             )}
             
-            <div className="flex justify-between items-center mb-6">
+            <div className="mb-4">
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Delivery Address</label>
+              <textarea 
+                value={deliveryAddress}
+                onChange={(e) => setDeliveryAddress(e.target.value)}
+                placeholder="Enter your full street address, apartment number, etc."
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 resize-none h-20"
+              />
+            </div>
+            
+            <div className="flex justify-between items-center mb-6 pt-2 border-t border-slate-100">
               <span className="text-slate-500 font-medium">Total Amount</span>
               <span className="text-2xl font-black text-slate-900">${totalPrice.toFixed(2)}</span>
             </div>
             
             <Button 
-              className="w-full h-14 rounded-2xl text-lg font-bold bg-slate-900 text-white hover:bg-slate-800 shadow-xl shadow-slate-900/20 active:scale-[0.98] transition-all flex items-center justify-center"
+              className="w-full h-14 rounded-2xl text-lg font-bold bg-amber-500 text-white hover:bg-amber-600 shadow-xl shadow-amber-500/20 active:scale-[0.98] transition-all flex items-center justify-center"
               onClick={handleCheckout}
               disabled={isSubmitting}
             >

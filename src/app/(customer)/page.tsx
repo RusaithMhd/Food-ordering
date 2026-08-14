@@ -5,29 +5,42 @@ import { useCart } from '@/features/cart/CartContext';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/browser';
 import { MenuItem, Category } from '@/types/menu';
+import { Branch } from '@/services/hotel.service';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Plus, UtensilsCrossed, Hotel, Sparkles } from 'lucide-react';
+import { ShoppingCart, Plus, MapPin, Truck, UtensilsCrossed, Sparkles } from 'lucide-react';
 import { useAuth } from '@/features/auth/AuthProvider';
 import Link from 'next/link';
 
 export default function CustomerMenu() {
-  const { branchId, branch, room, isLoading: isContextLoading } = useBranch();
+  const { branchId, branch, isLoading: isContextLoading, setContext } = useBranch();
   const { addItem, totalItems, setIsCartOpen } = useCart();
   const { user } = useAuth();
   
   const [categories, setCategories] = useState<Category[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [availableBranches, setAvailableBranches] = useState<Branch[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
+  // Fetch branches if no branch is selected (Landing Page mode)
   useEffect(() => {
-    if (!branchId) return;
+    if (!branchId) {
+      const fetchBranches = async () => {
+        setIsLoading(true);
+        const supabase = createClient();
+        const { data } = await supabase.from('branches').select('*').eq('status', 'OPEN');
+        if (data) setAvailableBranches(data);
+        setIsLoading(false);
+      };
+      fetchBranches();
+      return;
+    }
 
+    // Fetch Menu if branch is selected (Menu mode)
     const fetchMenu = async () => {
       setIsLoading(true);
       const supabase = createClient();
       
-      // Fetch Categories
       const { data: cats } = await supabase
         .from('categories')
         .select('*')
@@ -40,7 +53,6 @@ export default function CustomerMenu() {
         setActiveCategory(cats[0].id);
       }
 
-      // Fetch Items
       const { data: items } = await supabase
         .from('menu_items')
         .select('*')
@@ -59,41 +71,105 @@ export default function CustomerMenu() {
 
   if (isContextLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center">
         <div className="animate-pulse flex flex-col items-center">
-          <UtensilsCrossed className="h-8 w-8 text-slate-300 mb-4" />
-          <p className="text-slate-400 font-medium tracking-wide">Loading experience...</p>
+          <Truck className="h-8 w-8 text-slate-300 mb-4" />
+          <p className="text-slate-400 font-medium tracking-wide">Loading...</p>
         </div>
       </div>
     );
   }
 
+  // -------------------------------------------------------------
+  // LANDING PAGE (No Branch Selected)
+  // -------------------------------------------------------------
   if (!branchId) {
     return (
-      <div className="min-h-screen flex flex-col relative overflow-hidden bg-[#FAFAFA]">
-        {/* Decorative background blur */}
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-gradient-to-br from-emerald-100/40 to-teal-100/40 blur-3xl" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-gradient-to-br from-amber-100/40 to-orange-100/40 blur-3xl" />
-        
-        <div className="flex-1 flex flex-col items-center justify-center p-6 relative z-10">
-          <div className="bg-white/60 backdrop-blur-xl p-10 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white max-w-md w-full text-center">
-            <div className="w-20 h-20 bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl mx-auto flex items-center justify-center mb-6 shadow-lg shadow-slate-200">
-              <Hotel className="h-10 w-10 text-white" />
+      <div className="min-h-screen flex flex-col relative overflow-hidden bg-white">
+        {/* Header */}
+        <header className="absolute top-0 w-full z-20 px-6 py-5 flex justify-between items-center">
+          <div className="flex items-center space-x-2">
+            <div className="bg-slate-900 p-2 rounded-xl shadow-lg">
+              <Truck className="h-5 w-5 text-white" />
             </div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900 mb-3">Welcome to In-Room Dining</h1>
-            <p className="text-slate-500 mb-8 leading-relaxed">
-              To view the menu and place your order, please scan the QR code located in your room.
+            <span className="font-bold text-xl tracking-tight text-slate-900">SwiftDelivery</span>
+          </div>
+          {!user ? (
+            <Link href="/login">
+              <Button variant="ghost" className="font-medium">Sign In</Button>
+            </Link>
+          ) : (
+            <span className="text-sm font-medium text-slate-600">Hi, {user.displayName?.split(' ')[0]}</span>
+          )}
+        </header>
+
+        {/* Hero Section */}
+        <div className="flex-1 flex flex-col justify-center items-center px-6 relative pt-20 pb-12 text-center">
+          <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-gradient-to-br from-amber-100/50 to-orange-100/50 blur-3xl" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-gradient-to-br from-emerald-100/40 to-teal-100/40 blur-3xl" />
+          
+          <div className="relative z-10 max-w-2xl mx-auto space-y-6">
+            <div className="inline-flex items-center px-4 py-2 bg-amber-50 rounded-full text-amber-600 font-semibold text-sm shadow-sm border border-amber-100 mb-2">
+              <Sparkles className="h-4 w-4 mr-2" />
+              Premium Food Delivery
+            </div>
+            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 leading-[1.1]">
+              Cravings satisfied,<br/>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-600">
+                straight to your door.
+              </span>
+            </h1>
+            <p className="text-lg md:text-xl text-slate-500 max-w-xl mx-auto font-medium">
+              Select your nearest kitchen below to explore our curated menu of delicious meals.
             </p>
-            <div className="inline-flex items-center px-4 py-2 bg-slate-100 rounded-full text-sm font-medium text-slate-600">
-              <Sparkles className="h-4 w-4 mr-2 text-amber-500" />
-              Room assignments are automatic
-            </div>
+          </div>
+        </div>
+
+        {/* Branch Selection Section */}
+        <div className="bg-[#F8F9FA] flex-1 w-full border-t border-slate-100 py-16 px-6 relative z-10">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-2xl font-bold text-slate-900 mb-8 flex items-center">
+              <MapPin className="mr-2 h-6 w-6 text-slate-400" />
+              Available Kitchens
+            </h2>
+            
+            {isLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[1, 2].map(i => (
+                  <div key={i} className="h-32 bg-white rounded-3xl animate-pulse border border-slate-100" />
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {availableBranches.map(b => (
+                  <button
+                    key={b.id}
+                    onClick={() => setContext(b.id)}
+                    className="group bg-white p-6 rounded-3xl shadow-sm hover:shadow-xl hover:shadow-slate-200/50 border border-slate-200 text-left transition-all duration-300 transform hover:-translate-y-1 focus:ring-4 focus:ring-amber-500/20 outline-none"
+                  >
+                    <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-amber-50 transition-colors border border-slate-100">
+                      <UtensilsCrossed className="h-6 w-6 text-slate-400 group-hover:text-amber-500 transition-colors" />
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-900 mb-1">{b.name}</h3>
+                    <p className="text-sm text-slate-500 font-medium">Delivery available • 30-45 min</p>
+                  </button>
+                ))}
+                {availableBranches.length === 0 && !isLoading && (
+                  <div className="col-span-full p-8 text-center bg-white rounded-3xl border border-slate-100 border-dashed">
+                    <p className="text-slate-500 font-medium">No kitchens are currently open for delivery.</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
     );
   }
 
+  // -------------------------------------------------------------
+  // MENU PAGE (Branch Selected)
+  // -------------------------------------------------------------
   const itemsToDisplay = activeCategory 
     ? menuItems.filter(item => item.category_id === activeCategory)
     : menuItems;
@@ -101,17 +177,24 @@ export default function CustomerMenu() {
   return (
     <div className="min-h-screen bg-[#F8F9FA] pb-24 font-sans selection:bg-slate-200 selection:text-slate-900">
       {/* Premium Glass Header */}
-      <header className="sticky top-0 z-30 bg-white/70 backdrop-blur-xl border-b border-slate-200/50 shadow-sm transition-all duration-300">
+      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-slate-200/60 shadow-sm transition-all duration-300">
         <div className="px-5 py-4 flex justify-between items-center max-w-4xl mx-auto">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center shadow-sm">
-              <UtensilsCrossed className="h-5 w-5 text-white" />
+            <button 
+              onClick={() => setContext('')} 
+              className="p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors mr-1"
+              title="Change Kitchen"
+            >
+              ←
+            </button>
+            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center shadow-md shadow-amber-500/20">
+              <Truck className="h-5 w-5 text-white" />
             </div>
             <div>
               <h1 className="font-bold text-xl tracking-tight text-slate-900 leading-none mb-1">
-                {branch?.name || 'In-Room Dining'}
+                {branch?.name || 'Kitchen'}
               </h1>
-              {room && <p className="text-sm font-medium text-slate-500 leading-none">Room {room.room_number}</p>}
+              <p className="text-sm font-medium text-slate-500 leading-none">Delivering to you</p>
             </div>
           </div>
           
@@ -132,7 +215,7 @@ export default function CustomerMenu() {
             >
               <ShoppingCart className="h-5 w-5 text-slate-700 group-hover:text-slate-900 transition-colors" />
               {totalItems > 0 && (
-                <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[11px] font-bold h-5 w-5 rounded-full flex items-center justify-center ring-2 ring-white shadow-sm animate-in zoom-in">
+                <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-[11px] font-bold h-5 w-5 rounded-full flex items-center justify-center ring-2 ring-white shadow-sm animate-in zoom-in">
                   {totalItems}
                 </span>
               )}
