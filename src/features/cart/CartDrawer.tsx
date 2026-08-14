@@ -1,165 +1,168 @@
 'use client';
 
 import { useCart } from './CartContext';
-import { useBranch } from '@/features/branch/BranchContext';
-import { useAuth } from '@/features/auth/AuthProvider';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import { Minus, Plus, Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
 import { createOrder } from '@/actions/orders/create-order';
 import { useState } from 'react';
-import { Minus, Plus, Trash2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useBranch } from '../branch/BranchContext';
+import { useAuth } from '../auth/AuthProvider';
 
 export function CartDrawer() {
-  const { isCartOpen, setIsCartOpen, items, updateQuantity, removeItem, subtotal, clearCart } = useCart();
+  const { items, isCartOpen, setIsCartOpen, removeItem, updateQuantity, totalPrice, clearCart } = useCart();
   const { branchId, roomId } = useBranch();
   const { user } = useAuth();
-  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
-  const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleCheckout = async () => {
-    if (!user) {
-      alert('Please log in to place an order.');
-      setIsCartOpen(false);
-      router.push('/login');
+    if (!branchId) {
+      setError('Please scan a valid room QR code to place an order.');
+      return;
+    }
+    if (!roomId && !user) {
+      setError('You must either sign in or scan a room QR code to order.');
       return;
     }
 
-    if (!branchId || !roomId) {
-      alert('Missing branch or room context. Please scan the QR code in your room.');
-      return;
-    }
+    setIsSubmitting(true);
+    setError(null);
 
-    setIsPlacingOrder(true);
     try {
-      const orderData = {
-        branch_id: branchId,
-        room_id: roomId,
-        customer_id: user.uid,
-        items: items.map(i => ({
-          menu_item_id: i.menuItem.id,
-          quantity: i.quantity,
-          unit_price: i.menuItem.base_price,
-          notes: i.notes
-        })),
-        customer_note: '', // Could add a field for this in the drawer
-      };
+      const orderData = new FormData();
+      orderData.append('branch_id', branchId);
+      if (roomId) orderData.append('room_id', roomId);
+      orderData.append('payment_method', 'CASH_ON_DELIVERY');
+      orderData.append('items', JSON.stringify(
+        items.map(i => ({ menu_item_id: i.menuItem.id, quantity: i.quantity, unit_price: i.menuItem.base_price }))
+      ));
 
       const result = await createOrder(orderData);
-      
+
       if (result.success) {
         clearCart();
         setIsCartOpen(false);
-        alert('Order placed successfully!');
+        alert('Order placed successfully! The kitchen is preparing your food.');
       } else {
-        alert(result.error || 'Failed to place order');
+        setError(result.error || 'Failed to place order');
       }
-    } catch (error) {
-      console.error(error);
-      alert('An unexpected error occurred');
+    } catch (err) {
+      setError('An unexpected error occurred.');
     } finally {
-      setIsPlacingOrder(false);
+      setIsSubmitting(false);
     }
   };
 
-  const deliveryFee = 0;
-  const tax = 0;
-  const total = subtotal + deliveryFee + tax;
-
   return (
     <Sheet open={isCartOpen} onOpenChange={setIsCartOpen}>
-      <SheetContent className="w-full sm:max-w-md flex flex-col h-full bg-gray-50 p-0">
-        <SheetHeader className="p-6 bg-white border-b border-gray-100">
-          <SheetTitle className="text-2xl font-bold">Your Order</SheetTitle>
+      <SheetContent className="w-full sm:max-w-md bg-white/95 backdrop-blur-xl border-l border-slate-200/50 flex flex-col p-0 shadow-2xl">
+        <SheetHeader className="px-6 py-5 border-b border-slate-100 bg-white/50">
+          <SheetTitle className="flex items-center text-xl font-bold text-slate-900">
+            <ShoppingBag className="w-5 h-5 mr-2" />
+            Your Order
+          </SheetTitle>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto px-6 py-6 hide-scrollbar">
           {items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-400 space-y-4">
-              <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                <svg className="w-12 h-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                </svg>
+            <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-4">
+              <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center border border-dashed border-slate-200">
+                <ShoppingBag className="h-10 w-10 text-slate-300" />
               </div>
-              <p className="text-lg font-medium text-gray-500">Your cart is empty</p>
-              <Button variant="outline" onClick={() => setIsCartOpen(false)}>
+              <p className="font-medium text-slate-500">Your cart is empty</p>
+              <Button 
+                variant="outline" 
+                className="mt-2 rounded-full border-slate-200"
+                onClick={() => setIsCartOpen(false)}
+              >
                 Browse Menu
               </Button>
             </div>
           ) : (
-            items.map((item) => (
-              <div key={item.id} className="flex flex-col p-4 bg-white rounded-xl shadow-sm border border-gray-100 relative">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-semibold text-gray-900 pr-8">{item.menuItem.name}</h3>
-                  <span className="font-medium text-gray-900">${(item.menuItem.base_price * item.quantity).toFixed(2)}</span>
-                </div>
-                
-                {item.notes && (
-                  <p className="text-sm text-gray-500 mb-3 italic">"{item.notes}"</p>
-                )}
-
-                <div className="flex items-center justify-between mt-auto pt-2 border-t border-gray-50">
-                  <div className="flex items-center space-x-3 bg-gray-50 rounded-lg p-1">
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      className="h-8 w-8 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-md"
-                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                    >
-                      <Minus className="h-4 w-4" />
-                    </Button>
-                    <span className="w-4 text-center font-medium">{item.quantity}</span>
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      className="h-8 w-8 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-md"
-                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
+            <div className="space-y-6">
+              {items.map((item) => (
+                <div key={item.menuItem.id} className="flex gap-4 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                  {item.menuItem.image_url ? (
+                    <div className="w-20 h-20 shrink-0 bg-slate-50 rounded-xl overflow-hidden border border-slate-100">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={item.menuItem.image_url} alt={item.menuItem.name} className="w-full h-full object-cover" />
+                    </div>
+                  ) : (
+                    <div className="w-20 h-20 shrink-0 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 border-dashed">
+                      <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">No Img</span>
+                    </div>
+                  )}
                   
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="text-red-400 hover:text-red-600 hover:bg-red-50 h-8 w-8 rounded-md"
-                    onClick={() => removeItem(item.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex-1 flex flex-col">
+                    <div className="flex justify-between items-start">
+                      <h4 className="font-bold text-slate-900 text-[15px] leading-tight pr-2">{item.menuItem.name}</h4>
+                      <button 
+                        onClick={() => removeItem(item.menuItem.id)}
+                        className="text-slate-400 hover:text-rose-500 transition-colors p-1 -mr-1"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                    
+                    <div className="text-slate-900 font-extrabold mt-1">
+                      ${(item.menuItem.base_price * item.quantity).toFixed(2)}
+                    </div>
+
+                    <div className="flex items-center space-x-3 mt-auto pt-2">
+                      <button 
+                        className="w-8 h-8 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 transition-colors active:scale-95"
+                        onClick={() => updateQuantity(item.menuItem.id, Math.max(1, item.quantity - 1))}
+                      >
+                        <Minus className="h-3 w-3" />
+                      </button>
+                      <span className="font-semibold text-slate-900 min-w-[20px] text-center">{item.quantity}</span>
+                      <button 
+                        className="w-8 h-8 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 transition-colors active:scale-95"
+                        onClick={() => updateQuantity(item.menuItem.id, item.quantity + 1)}
+                      >
+                        <Plus className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))
+              ))}
+            </div>
           )}
         </div>
 
         {items.length > 0 && (
-          <div className="bg-white p-6 border-t border-gray-100 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-            <div className="space-y-3 mb-6 text-sm">
-              <div className="flex justify-between text-gray-600">
-                <span>Subtotal</span>
-                <span className="font-medium text-gray-900">${subtotal.toFixed(2)}</span>
+          <div className="border-t border-slate-100 p-6 bg-white shadow-[0_-10px_40px_rgba(0,0,0,0.03)] z-10">
+            {error && (
+              <div className="mb-4 p-3 bg-rose-50 text-rose-600 text-sm rounded-xl border border-rose-100 flex items-start">
+                <span className="font-medium">{error}</span>
               </div>
-              <div className="flex justify-between text-gray-600">
-                <span>Delivery Fee</span>
-                <span className="font-medium text-gray-900">${deliveryFee.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-gray-600">
-                <span>Tax</span>
-                <span className="font-medium text-gray-900">${tax.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between items-center pt-3 border-t border-gray-100">
-                <span className="font-bold text-gray-900 text-lg">Total</span>
-                <span className="font-bold text-gray-900 text-xl">${total.toFixed(2)}</span>
-              </div>
+            )}
+            
+            <div className="flex justify-between items-center mb-6">
+              <span className="text-slate-500 font-medium">Total Amount</span>
+              <span className="text-2xl font-black text-slate-900">${totalPrice.toFixed(2)}</span>
             </div>
+            
             <Button 
-              className="w-full h-14 text-lg font-medium bg-black hover:bg-gray-800 text-white shadow-xl shadow-gray-200" 
-              onClick={handleCheckout} 
-              disabled={isPlacingOrder}
+              className="w-full h-14 rounded-2xl text-lg font-bold bg-slate-900 text-white hover:bg-slate-800 shadow-xl shadow-slate-900/20 active:scale-[0.98] transition-all flex items-center justify-center"
+              onClick={handleCheckout}
+              disabled={isSubmitting}
             >
-              {isPlacingOrder ? 'Processing...' : 'Place Order (Cash on Delivery)'}
+              {isSubmitting ? (
+                <div className="flex items-center">
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-3" />
+                  Processing...
+                </div>
+              ) : (
+                <>
+                  Place Order <ArrowRight className="ml-2 w-5 h-5" />
+                </>
+              )}
             </Button>
+            <p className="text-center text-xs text-slate-400 mt-4 font-medium flex items-center justify-center">
+               Payment Method: Cash on Delivery
+            </p>
           </div>
         )}
       </SheetContent>

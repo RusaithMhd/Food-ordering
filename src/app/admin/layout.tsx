@@ -47,41 +47,56 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-[#FAFAFA] font-sans selection:bg-indigo-100 selection:text-indigo-900">
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
-        <div className="h-16 flex items-center px-6 border-b border-gray-200">
-          <h1 className="font-bold text-xl tracking-tight text-gray-900">Admin Panel</h1>
+      <aside className="w-64 bg-slate-950 text-slate-300 flex flex-col shadow-2xl z-20">
+        <div className="h-16 flex items-center px-6 border-b border-white/10">
+          <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center mr-3 shadow-lg shadow-indigo-500/20">
+            <LayoutDashboard className="h-4 w-4 text-white" />
+          </div>
+          <h1 className="font-bold text-lg tracking-tight text-white">Admin Panel</h1>
         </div>
         
-        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-          <Link href="/admin" className="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 font-medium">
-            <LayoutDashboard className="h-5 w-5 text-gray-500" />
+        <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-1.5 hide-scrollbar">
+          <Link href="/admin" className="flex items-center space-x-3 px-3 py-2.5 rounded-xl transition-all duration-200 hover:bg-white/10 hover:text-white font-medium group">
+            <LayoutDashboard className="h-5 w-5 text-slate-500 group-hover:text-indigo-400 transition-colors" />
             <span>Dashboard</span>
           </Link>
-          <Link href="/admin/branches" className="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 font-medium">
-            <Store className="h-5 w-5 text-gray-500" />
+          <Link href="/admin/branches" className="flex items-center space-x-3 px-3 py-2.5 rounded-xl transition-all duration-200 hover:bg-white/10 hover:text-white font-medium group">
+            <Store className="h-5 w-5 text-slate-500 group-hover:text-indigo-400 transition-colors" />
             <span>Branches &amp; Rooms</span>
           </Link>
-          <Link href="/admin/menu" className="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 font-medium bg-gray-100">
-            <MenuIcon className="h-5 w-5 text-gray-900" />
-            <span className="text-gray-900">Menu Management</span>
+          <Link href="/admin/menu" className="flex items-center space-x-3 px-3 py-2.5 rounded-xl transition-all duration-200 hover:bg-white/10 hover:text-white font-medium group">
+            <MenuIcon className="h-5 w-5 text-slate-500 group-hover:text-indigo-400 transition-colors" />
+            <span>Menu Management</span>
           </Link>
-          <Link href="/admin/staff" className="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 font-medium">
-            <Users className="h-5 w-5 text-gray-500" />
+          <Link href="/admin/staff" className="flex items-center space-x-3 px-3 py-2.5 rounded-xl transition-all duration-200 hover:bg-white/10 hover:text-white font-medium group">
+            <Users className="h-5 w-5 text-slate-500 group-hover:text-indigo-400 transition-colors" />
             <span>Staff &amp; Users</span>
           </Link>
         </nav>
 
-        <div className="p-4 border-t border-gray-200">
-          <div className="text-sm font-medium text-gray-900">Role: {userRole}</div>
-          <Link href="/" className="text-xs text-blue-600 hover:underline mt-1 inline-block">Back to Customer View</Link>
+        <div className="p-5 border-t border-white/10 bg-slate-900/50">
+          <div className="flex items-center space-x-3 mb-3">
+            <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center border border-white/10">
+              <span className="text-xs font-bold text-white">{userRole.charAt(0)}</span>
+            </div>
+            <div>
+              <div className="text-xs font-medium text-slate-400 uppercase tracking-wider">Role</div>
+              <div className="text-sm font-bold text-white leading-tight">{userRole}</div>
+            </div>
+          </div>
+          <Link href="/" className="text-xs font-medium text-indigo-400 hover:text-indigo-300 transition-colors flex items-center">
+            <span className="mr-1">←</span> Back to App
+          </Link>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-8">
-        {children}
+      <main className="flex-1 overflow-y-auto p-8 lg:p-12">
+        <div className="max-w-6xl mx-auto">
+          {children}
+        </div>
       </main>
     </div>
   );
