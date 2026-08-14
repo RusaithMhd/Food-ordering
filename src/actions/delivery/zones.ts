@@ -112,3 +112,54 @@ export const updateDeliveryZone = withAuth(
   },
   { requiredRoles: ['ADMIN', 'MANAGER'] }
 );
+
+export const updateZoneAction = withAuth(
+  async (formData: FormData) => {
+    try {
+      const id = formData.get('id') as string;
+      const name = formData.get('name') as string;
+      const description = formData.get('description') as string;
+      const delivery_fee = parseFloat(formData.get('delivery_fee') as string);
+      const minimum_order_value = parseFloat(formData.get('minimum_order_value') as string) || 0;
+
+      if (!id || !name || isNaN(delivery_fee)) {
+        return { success: false, error: 'Missing required fields' };
+      }
+
+      const supabase = await createAdminClient();
+      const { error } = await supabase.from('delivery_zones').update({
+        name,
+        description,
+        delivery_fee,
+        minimum_order: minimum_order_value,
+      }).eq('id', id);
+
+      if (error) throw error;
+
+      revalidatePath('/admin/zones');
+      return { success: true };
+    } catch (error) {
+      logger.error('Failed to update zone via form', { error });
+      return { success: false, error: 'Failed to update zone' };
+    }
+  },
+  { requiredRoles: ['ADMIN', 'MANAGER', 'SUPER_ADMIN'] }
+);
+
+export const deleteZoneAction = withAuth(
+  async (id: string) => {
+    try {
+      const supabase = await createAdminClient();
+      const { error } = await supabase.from('delivery_zones').delete().eq('id', id);
+
+      if (error) throw error;
+
+      revalidatePath('/admin/zones');
+      return { success: true };
+    } catch (error) {
+      logger.error('Failed to delete zone', { error });
+      return { success: false, error: 'Failed to delete zone' };
+    }
+  },
+  { requiredRoles: ['ADMIN', 'MANAGER', 'SUPER_ADMIN'] }
+);

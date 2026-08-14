@@ -57,3 +57,35 @@ export const deleteCategory = withAuth(
   },
   { requiredRoles: ['ADMIN', 'MANAGER', 'SUPER_ADMIN'] }
 );
+
+export const updateCategory = withAuth(
+  async (formData: FormData) => {
+    try {
+      const id = formData.get('id') as string;
+      const name = formData.get('name') as string;
+      const description = formData.get('description') as string;
+
+      if (!id || !name) {
+        return { success: false, error: 'Missing required fields' };
+      }
+
+      const supabase = await createAdminClient();
+
+      const { error } = await supabase.from('categories').update({
+        name,
+        description,
+      }).eq('id', id);
+
+      if (error) throw error;
+
+      revalidatePath('/admin/categories');
+      revalidatePath('/admin/menu');
+      revalidatePath('/'); 
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to update category:', error);
+      return { success: false, error: 'Failed to update category' };
+    }
+  },
+  { requiredRoles: ['ADMIN', 'MANAGER', 'SUPER_ADMIN'] }
+);

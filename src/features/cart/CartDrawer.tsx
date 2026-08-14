@@ -29,6 +29,8 @@ export function CartDrawer() {
   const [showNewAddressForm, setShowNewAddressForm] = useState(false);
   const [newAddress, setNewAddress] = useState({
     address_type: 'HOSTEL',
+    recipient_name: '',
+    phone: '',
     address_line1: '',
     address_line2: '',
     zone_id: ''
@@ -72,7 +74,7 @@ export function CartDrawer() {
   };
 
   const handleSaveAddress = async () => {
-    if (!newAddress.address_line1 || !newAddress.zone_id) {
+    if (!newAddress.address_line1 || !newAddress.zone_id || !newAddress.recipient_name || !newAddress.phone) {
       setError('Please fill out all address fields.');
       return;
     }
@@ -82,6 +84,8 @@ export function CartDrawer() {
     
     const res = await createAddress({
       address_type: newAddress.address_type as any,
+      recipient_name: newAddress.recipient_name,
+      phone: newAddress.phone,
       address_line1: newAddress.address_line1,
       address_line2: newAddress.address_line2,
       zone_id: newAddress.zone_id,
@@ -258,6 +262,23 @@ export function CartDrawer() {
                     <option value="UNIVERSITY">University Campus</option>
                     <option value="PRIVATE_ADDRESS">Private Address</option>
                   </select>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <input 
+                      type="text"
+                      placeholder="Recipient Name"
+                      className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm"
+                      value={newAddress.recipient_name}
+                      onChange={(e) => setNewAddress({...newAddress, recipient_name: e.target.value})}
+                    />
+                    <input 
+                      type="text"
+                      placeholder="Phone Number"
+                      className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm"
+                      value={newAddress.phone}
+                      onChange={(e) => setNewAddress({...newAddress, phone: e.target.value})}
+                    />
+                  </div>
                   
                   <select 
                     className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm font-medium"

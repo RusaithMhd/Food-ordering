@@ -6,6 +6,8 @@ import { logger } from '@/lib/logger';
 
 export interface CreateAddressData {
   address_type: 'UNIVERSITY' | 'HOSTEL' | 'PRIVATE_ADDRESS' | 'CAMPUS' | 'OTHER';
+  recipient_name: string;
+  phone: string;
   address_line1: string;
   address_line2?: string;
   landmark?: string;

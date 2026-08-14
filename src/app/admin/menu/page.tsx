@@ -1,8 +1,9 @@
 import { createAdminClient } from '@/lib/supabase/server';
-import { createMenuItem, deleteMenuItem } from '@/actions/admin/menu';
+import { createMenuItem, updateMenuItem, deleteMenuItem } from '@/actions/admin/menu';
 import { Button } from '@/components/ui/button';
 import { revalidatePath } from 'next/cache';
-import { UtensilsCrossed, Plus, RefreshCw, Trash2, Leaf, Image as ImageIcon } from 'lucide-react';
+import { UtensilsCrossed, Plus, RefreshCw, Trash2, Leaf, Image as ImageIcon, Edit2, X } from 'lucide-react';
+import Link from 'next/link';
 
 async function getAdminMenuData() {
   const supabase = await createAdminClient();
@@ -22,8 +23,12 @@ async function getAdminMenuData() {
   return { branches: branches || [], categories: categories || [], items: items || [] };
 }
 
-export default async function AdminMenuPage() {
+export default async function AdminMenuPage(props: { searchParams: Promise<{ edit?: string }> }) {
+  const searchParams = await props.searchParams;
   const { branches, categories, items } = await getAdminMenuData();
+  
+  const editId = searchParams?.edit;
+  const editItem = editId ? items?.find(i => i.id === editId) : null;
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -34,24 +39,34 @@ export default async function AdminMenuPage() {
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         
-        {/* Add New Item Form */}
+        {/* Add/Edit Item Form */}
         <div className="xl:col-span-1 h-fit">
           <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-400 to-orange-500" />
-            <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center">
-              <UtensilsCrossed className="w-5 h-5 mr-2 text-amber-500" />
-              Add New Item
+            <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center justify-between">
+              <span className="flex items-center">
+                {editItem ? <Edit2 className="w-5 h-5 mr-2 text-amber-500" /> : <UtensilsCrossed className="w-5 h-5 mr-2 text-amber-500" />}
+                {editItem ? 'Edit Menu Item' : 'Add New Item'}
+              </span>
+              {editItem && (
+                <Link href="/admin/menu">
+                  <Button variant="ghost" size="sm" className="text-slate-400 hover:text-slate-600">
+                    <X className="w-4 h-4" />
+                  </Button>
+                </Link>
+              )}
             </h2>
             
-            <form action={async (fd) => { 'use server'; await createMenuItem(fd); }} className="space-y-5">
+            <form action={async (fd) => { 'use server'; if (editItem) { await updateMenuItem(fd); } else { await createMenuItem(fd); } }} className="space-y-5">
+              {editItem && <input type="hidden" name="id" value={editItem.id} />}
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Item Name <span className="text-rose-500">*</span></label>
-                <input type="text" name="name" required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all" placeholder="e.g. Signature Wagyu Burger" />
+                <input type="text" name="name" defaultValue={editItem?.name || ''} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all" placeholder="e.g. Signature Wagyu Burger" />
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Description</label>
-                <textarea name="description" rows={2} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all resize-none" placeholder="A mouth-watering description..."></textarea>
+                <textarea name="description" defaultValue={editItem?.description || ''} rows={2} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all resize-none" placeholder="A mouth-watering description..."></textarea>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -59,23 +74,23 @@ export default async function AdminMenuPage() {
                   <label className="block text-sm font-semibold text-slate-700 mb-1.5">Price ($) <span className="text-rose-500">*</span></label>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">$</span>
-                    <input type="number" step="0.01" name="base_price" required className="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all" placeholder="0.00" />
+                    <input type="number" step="0.01" name="base_price" defaultValue={editItem?.base_price || ''} required className="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all" placeholder="0.00" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1.5">Prep Time</label>
                   <div className="relative">
-                    <input type="number" name="preparation_time" defaultValue="15" className="w-full pr-10 pl-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all" />
+                    <input type="number" name="preparation_time" defaultValue={editItem?.preparation_time_minutes || '15'} className="w-full pr-10 pl-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all" />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium text-xs">min</span>
                   </div>
                 </div>
               </div>
 
-              <input type="hidden" name="branch_id" value={branches[0]?.id || ''} />
+              {!editItem && <input type="hidden" name="branch_id" value={branches[0]?.id || ''} />}
 
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Category <span className="text-rose-500">*</span></label>
-                <select name="category_id" required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all appearance-none cursor-pointer">
+                <select name="category_id" defaultValue={editItem?.category_id || ''} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all appearance-none cursor-pointer">
                   <option value="">Select Category</option>
                   {categories.map(c => (
                     <option key={c.id} value={c.id}>{c.name}</option>
@@ -89,20 +104,31 @@ export default async function AdminMenuPage() {
                   <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
                     <ImageIcon className="w-4 h-4" />
                   </div>
-                  <input type="url" name="image_url" className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all" placeholder="https://..." />
+                  <input type="url" name="image_url" defaultValue={editItem?.image_url || ''} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all" placeholder="https://..." />
                 </div>
               </div>
 
               <div className="flex items-center p-4 rounded-xl border border-slate-200 bg-slate-50/50">
-                <input type="checkbox" name="is_vegetarian" id="is_vegetarian" className="h-5 w-5 text-amber-500 focus:ring-amber-500 border-slate-300 rounded cursor-pointer" />
+                <input type="checkbox" name="is_vegetarian" id="is_vegetarian" defaultChecked={editItem?.is_vegetarian} className="h-5 w-5 text-amber-500 focus:ring-amber-500 border-slate-300 rounded cursor-pointer" />
                 <label htmlFor="is_vegetarian" className="ml-3 block text-sm font-semibold text-slate-700 cursor-pointer flex items-center">
                   Vegetarian <Leaf className="w-4 h-4 ml-1.5 text-emerald-500" />
                 </label>
               </div>
 
               <Button type="submit" className="w-full h-12 rounded-xl text-sm font-bold bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-900/10 active:scale-[0.98] transition-all mt-2">
-                <Plus className="w-4 h-4 mr-2" /> Add Menu Item
+                {editItem ? (
+                  <><Edit2 className="w-4 h-4 mr-2" /> Save Changes</>
+                ) : (
+                  <><Plus className="w-4 h-4 mr-2" /> Add Menu Item</>
+                )}
               </Button>
+              {editItem && (
+                <Link href="/admin/menu">
+                  <Button variant="outline" className="w-full mt-2 h-12 rounded-xl text-sm font-bold border-slate-200 hover:bg-slate-50">
+                    Cancel
+                  </Button>
+                </Link>
+              )}
             </form>
           </div>
         </div>
@@ -138,7 +164,7 @@ export default async function AdminMenuPage() {
                       </td>
                     </tr>
                   ) : items.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
+                    <tr key={item.id} className={`hover:bg-slate-50/50 transition-colors group ${editItem?.id === item.id ? 'bg-amber-50/50' : ''}`}>
                       <td className="px-5 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           {item.image_url ? (
@@ -168,11 +194,18 @@ export default async function AdminMenuPage() {
                         </span>
                       </td>
                       <td className="px-5 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <form action={async () => { 'use server'; await deleteMenuItem(item.id); }}>
-                          <Button variant="ghost" size="sm" className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all">
-                            <Trash2 className="w-4 h-4 mr-1.5" /> Delete
-                          </Button>
-                        </form>
+                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Link href={`/admin/menu?edit=${item.id}`}>
+                            <Button variant="ghost" size="sm" className="text-amber-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all">
+                              <Edit2 className="w-4 h-4 mr-1.5" /> Edit
+                            </Button>
+                          </Link>
+                          <form action={async () => { 'use server'; await deleteMenuItem(item.id); }}>
+                            <Button variant="ghost" size="sm" className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
+                              <Trash2 className="w-4 h-4 mr-1.5" /> Delete
+                            </Button>
+                          </form>
+                        </div>
                       </td>
                     </tr>
                   ))}

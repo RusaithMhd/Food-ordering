@@ -1,10 +1,14 @@
-import { getDeliveryZones, createZoneAction } from '@/actions/delivery/zones';
+import { getDeliveryZones, createZoneAction, updateZoneAction, deleteZoneAction } from '@/actions/delivery/zones';
 import { Button } from '@/components/ui/button';
-import { Map, Plus, Edit2, ShieldAlert, DollarSign } from 'lucide-react';
+import { Map, Plus, Edit2, ShieldAlert, DollarSign, Trash2, X } from 'lucide-react';
 import Link from 'next/link';
 
-export default async function DeliveryZonesPage() {
+export default async function DeliveryZonesPage(props: { searchParams: Promise<{ edit?: string }> }) {
+  const searchParams = await props.searchParams;
   const { data: zones, error } = await getDeliveryZones(true);
+  
+  const editId = searchParams?.edit;
+  const editZone = editId ? zones?.find(z => z.id === editId) : null;
 
   return (
     <div className="space-y-6 pb-24 md:pb-6">
@@ -26,24 +30,34 @@ export default async function DeliveryZonesPage() {
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
           
-          {/* Add New Zone Form */}
+          {/* Add/Edit Zone Form */}
           <div className="xl:col-span-1 h-fit">
             <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-400 to-blue-500" />
-              <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center">
-                <Map className="w-5 h-5 mr-2 text-indigo-500" />
-                Add New Zone
+              <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center justify-between">
+                <span className="flex items-center">
+                  {editZone ? <Edit2 className="w-5 h-5 mr-2 text-indigo-500" /> : <Map className="w-5 h-5 mr-2 text-indigo-500" />}
+                  {editZone ? 'Edit Zone' : 'Add New Zone'}
+                </span>
+                {editZone && (
+                  <Link href="/admin/zones">
+                    <Button variant="ghost" size="sm" className="text-slate-400 hover:text-slate-600">
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </Link>
+                )}
               </h2>
               
-              <form action={async (fd) => { 'use server'; await createZoneAction(fd); }} className="space-y-5">
+              <form action={async (fd) => { 'use server'; if (editZone) { await updateZoneAction(fd); } else { await createZoneAction(fd); } }} className="space-y-5">
+                {editZone && <input type="hidden" name="id" value={editZone.id} />}
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1.5">Zone Name <span className="text-rose-500">*</span></label>
-                  <input type="text" name="name" required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all" placeholder="e.g. North Campus Hostel" />
+                  <input type="text" name="name" defaultValue={editZone?.name || ''} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all" placeholder="e.g. North Campus Hostel" />
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1.5">Description</label>
-                  <textarea name="description" rows={2} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none" placeholder="Detailed location info..."></textarea>
+                  <textarea name="description" defaultValue={editZone?.description || ''} rows={2} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none" placeholder="Detailed location info..."></textarea>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -51,21 +65,32 @@ export default async function DeliveryZonesPage() {
                     <label className="block text-sm font-semibold text-slate-700 mb-1.5">Delivery Fee ($) <span className="text-rose-500">*</span></label>
                     <div className="relative">
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">$</span>
-                      <input type="number" step="0.01" name="delivery_fee" required className="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all" placeholder="0.00" />
+                      <input type="number" step="0.01" name="delivery_fee" defaultValue={editZone?.delivery_fee || ''} required className="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all" placeholder="0.00" />
                     </div>
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-1.5">Min. Order ($)</label>
                     <div className="relative">
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">$</span>
-                      <input type="number" step="0.01" name="minimum_order_value" defaultValue="0.00" className="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all" />
+                      <input type="number" step="0.01" name="minimum_order_value" defaultValue={editZone?.minimum_order || '0.00'} className="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all" />
                     </div>
                   </div>
                 </div>
 
                 <Button type="submit" className="w-full h-12 rounded-xl text-sm font-bold bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-900/10 active:scale-[0.98] transition-all mt-2">
-                  <Plus className="w-4 h-4 mr-2" /> Add Zone
+                  {editZone ? (
+                    <><Edit2 className="w-4 h-4 mr-2" /> Save Changes</>
+                  ) : (
+                    <><Plus className="w-4 h-4 mr-2" /> Add Zone</>
+                  )}
                 </Button>
+                {editZone && (
+                  <Link href="/admin/zones">
+                    <Button variant="outline" className="w-full mt-2 h-12 rounded-xl text-sm font-bold border-slate-200 hover:bg-slate-50">
+                      Cancel
+                    </Button>
+                  </Link>
+                )}
               </form>
             </div>
           </div>
@@ -81,7 +106,7 @@ export default async function DeliveryZonesPage() {
               </div>
             ) : (
               zones?.map((zone) => (
-                <div key={zone.id} className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm relative">
+                <div key={zone.id} className={`bg-white rounded-2xl p-5 border shadow-sm relative ${editZone?.id === zone.id ? 'border-indigo-500 ring-1 ring-indigo-500' : 'border-slate-200'}`}>
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="font-bold text-slate-900 text-lg pr-8">{zone.name}</h3>
                     {zone.is_active ? (
@@ -107,9 +132,18 @@ export default async function DeliveryZonesPage() {
                     </div>
                   </div>
                   
-                  <Button variant="outline" className="w-full text-indigo-600 border-indigo-100 hover:bg-indigo-50 font-bold">
-                    <Edit2 className="w-4 h-4 mr-2" /> Edit Zone
-                  </Button>
+                  <div className="flex gap-2">
+                    <Link href={`/admin/zones?edit=${zone.id}`} className="flex-1">
+                      <Button variant="outline" className="w-full text-indigo-600 border-indigo-100 hover:bg-indigo-50 font-bold">
+                        <Edit2 className="w-4 h-4 mr-2" /> Edit
+                      </Button>
+                    </Link>
+                    <form action={async () => { 'use server'; await deleteZoneAction(zone.id); }} className="flex-[0.5]">
+                      <Button variant="outline" className="w-full text-rose-600 border-rose-100 hover:bg-rose-50 font-bold">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </form>
+                  </div>
                 </div>
               ))
             )}
@@ -140,7 +174,7 @@ export default async function DeliveryZonesPage() {
                     </tr>
                   ) : (
                     zones?.map((zone) => (
-                      <tr key={zone.id} className="hover:bg-slate-50 transition-colors group">
+                      <tr key={zone.id} className={`hover:bg-slate-50 transition-colors group ${editZone?.id === zone.id ? 'bg-indigo-50/50' : ''}`}>
                         <td className="py-4 px-6">
                           <div className="font-bold text-slate-900">{zone.name}</div>
                         </td>
@@ -165,9 +199,18 @@ export default async function DeliveryZonesPage() {
                           )}
                         </td>
                         <td className="py-4 px-6 text-right">
-                          <Button variant="ghost" size="sm" className="text-slate-400 hover:text-indigo-600 transition-colors">
-                            <Edit2 className="w-4 h-4" />
-                          </Button>
+                          <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Link href={`/admin/zones?edit=${zone.id}`}>
+                              <Button variant="ghost" size="sm" className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 transition-colors">
+                                <Edit2 className="w-4 h-4" />
+                              </Button>
+                            </Link>
+                            <form action={async () => { 'use server'; await deleteZoneAction(zone.id); }}>
+                              <Button variant="ghost" size="sm" className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 transition-colors">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </form>
+                          </div>
                         </td>
                       </tr>
                     ))

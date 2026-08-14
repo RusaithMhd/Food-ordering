@@ -1,8 +1,9 @@
 import { createAdminClient } from '@/lib/supabase/server';
-import { createCategory, deleteCategory } from '@/actions/admin/categories';
+import { createCategory, updateCategory, deleteCategory } from '@/actions/admin/categories';
 import { Button } from '@/components/ui/button';
 import { revalidatePath } from 'next/cache';
-import { Tags, Plus, RefreshCw, Trash2, Store } from 'lucide-react';
+import { Tags, Plus, RefreshCw, Trash2, Edit2, X } from 'lucide-react';
+import Link from 'next/link';
 
 async function getCategoryData() {
   const supabase = await createAdminClient();
@@ -17,8 +18,12 @@ async function getCategoryData() {
   return { branches: branches || [], categories: categories || [] };
 }
 
-export default async function CategoryManagementPage() {
+export default async function CategoryManagementPage(props: { searchParams: Promise<{ edit?: string }> }) {
+  const searchParams = await props.searchParams;
   const { branches, categories } = await getCategoryData();
+  
+  const editId = searchParams?.edit;
+  const editCategory = editId ? categories?.find(c => c.id === editId) : null;
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -29,31 +34,52 @@ export default async function CategoryManagementPage() {
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         
-        {/* Add New Category Form */}
+        {/* Add/Edit Category Form */}
         <div className="xl:col-span-1 h-fit">
           <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-pink-400 to-rose-500" />
-            <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center">
-              <Tags className="w-5 h-5 mr-2 text-rose-500" />
-              Add New Category
+            <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center justify-between">
+              <span className="flex items-center">
+                {editCategory ? <Edit2 className="w-5 h-5 mr-2 text-rose-500" /> : <Tags className="w-5 h-5 mr-2 text-rose-500" />}
+                {editCategory ? 'Edit Category' : 'Add New Category'}
+              </span>
+              {editCategory && (
+                <Link href="/admin/categories">
+                  <Button variant="ghost" size="sm" className="text-slate-400 hover:text-slate-600">
+                    <X className="w-4 h-4" />
+                  </Button>
+                </Link>
+              )}
             </h2>
             
-            <form action={async (fd) => { 'use server'; await createCategory(fd); }} className="space-y-5">
+            <form action={async (fd) => { 'use server'; if (editCategory) { await updateCategory(fd); } else { await createCategory(fd); } }} className="space-y-5">
+              {editCategory && <input type="hidden" name="id" value={editCategory.id} />}
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Category Name <span className="text-rose-500">*</span></label>
-                <input type="text" name="name" required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all" placeholder="e.g. Signature Cocktails" />
+                <input type="text" name="name" defaultValue={editCategory?.name || ''} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all" placeholder="e.g. Signature Cocktails" />
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Description</label>
-                <textarea name="description" rows={2} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all resize-none" placeholder="A brief description of this category..."></textarea>
+                <textarea name="description" defaultValue={editCategory?.description || ''} rows={2} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all resize-none" placeholder="A brief description of this category..."></textarea>
               </div>
 
-              <input type="hidden" name="branch_id" value={branches[0]?.id || ''} />
+              {!editCategory && <input type="hidden" name="branch_id" value={branches[0]?.id || ''} />}
 
               <Button type="submit" className="w-full h-12 rounded-xl text-sm font-bold bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-900/10 active:scale-[0.98] transition-all mt-2">
-                <Plus className="w-4 h-4 mr-2" /> Add Category
+                {editCategory ? (
+                  <><Edit2 className="w-4 h-4 mr-2" /> Save Changes</>
+                ) : (
+                  <><Plus className="w-4 h-4 mr-2" /> Add Category</>
+                )}
               </Button>
+              {editCategory && (
+                <Link href="/admin/categories">
+                  <Button variant="outline" className="w-full mt-2 h-12 rounded-xl text-sm font-bold border-slate-200 hover:bg-slate-50">
+                    Cancel
+                  </Button>
+                </Link>
+              )}
             </form>
           </div>
         </div>
@@ -88,7 +114,7 @@ export default async function CategoryManagementPage() {
                       </td>
                     </tr>
                   ) : categories.map((cat) => (
-                    <tr key={cat.id} className="hover:bg-slate-50/50 transition-colors group">
+                    <tr key={cat.id} className={`hover:bg-slate-50/50 transition-colors group ${editCategory?.id === cat.id ? 'bg-rose-50/50' : ''}`}>
                       <td className="px-5 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="h-10 w-10 rounded-xl bg-rose-50 flex items-center justify-center mr-4 border border-rose-100 text-rose-500">
@@ -102,11 +128,18 @@ export default async function CategoryManagementPage() {
                       </td>
 
                       <td className="px-5 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <form action={async () => { 'use server'; await deleteCategory(cat.id); }}>
-                          <Button variant="ghost" size="sm" className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all">
-                            <Trash2 className="w-4 h-4 mr-1.5" /> Delete
-                          </Button>
-                        </form>
+                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Link href={`/admin/categories?edit=${cat.id}`}>
+                            <Button variant="ghost" size="sm" className="text-indigo-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all">
+                              <Edit2 className="w-4 h-4 mr-1.5" /> Edit
+                            </Button>
+                          </Link>
+                          <form action={async () => { 'use server'; await deleteCategory(cat.id); }}>
+                            <Button variant="ghost" size="sm" className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
+                              <Trash2 className="w-4 h-4 mr-1.5" /> Delete
+                            </Button>
+                          </form>
+                        </div>
                       </td>
                     </tr>
                   ))}
