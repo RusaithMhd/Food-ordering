@@ -4,6 +4,8 @@ import { Suspense } from "react";
 import "./globals.css";
 import { AuthProvider } from "@/features/auth/AuthProvider";
 import { BranchProvider } from "@/features/branch/BranchContext";
+import { CartProvider } from "@/features/cart/CartContext";
+import { CartDrawer } from "@/features/cart/CartDrawer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,7 +36,10 @@ export default function RootLayout({
         <AuthProvider>
           <Suspense fallback={<div>Loading context...</div>}>
             <BranchProvider>
-              {children}
+              <CartProvider>
+                {children}
+                <CartDrawer />
+              </CartProvider>
             </BranchProvider>
           </Suspense>
         </AuthProvider>
