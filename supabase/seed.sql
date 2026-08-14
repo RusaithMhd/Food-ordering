@@ -58,3 +58,5 @@ BEGIN
   SELECT v_manager_id, id FROM permissions WHERE name IN ('dashboard.view', 'orders.view', 'kitchen.view', 'delivery.view') ON CONFLICT DO NOTHING;
   
 END $$;
+
+
