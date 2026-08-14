@@ -7,7 +7,7 @@ import { logger } from '@/lib/logger';
 
 interface CreateOrderData {
   branch_id: string;
-  room_id: string;
+  room_id?: string;
   customer_id: string;
   items: {
     menu_item_id: string;

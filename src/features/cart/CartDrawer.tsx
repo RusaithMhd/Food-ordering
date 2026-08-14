@@ -10,7 +10,7 @@ import { useBranch } from '../branch/BranchContext';
 import { useAuth } from '../auth/AuthProvider';
 
 export function CartDrawer() {
-  const { items, isCartOpen, setIsCartOpen, removeItem, updateQuantity, totalPrice, clearCart } = useCart();
+  const { items, isCartOpen, setIsCartOpen, removeItem, updateQuantity, subtotal, clearCart } = useCart();
   const { branchId, roomId } = useBranch();
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -35,17 +35,18 @@ export function CartDrawer() {
     setError(null);
 
     try {
-      const orderData = new FormData();
-      orderData.append('branch_id', branchId);
-      if (roomId) orderData.append('room_id', roomId);
-      orderData.append('payment_method', 'CASH_ON_DELIVERY');
-      
-      // Save delivery address to customer_note for MVP
-      orderData.append('customer_note', `DELIVERY ADDRESS: ${deliveryAddress}`);
-      
-      orderData.append('items', JSON.stringify(
-        items.map(i => ({ menu_item_id: i.menuItem.id, quantity: i.quantity, unit_price: i.menuItem.base_price }))
-      ));
+      const orderData = {
+        branch_id: branchId,
+        room_id: roomId || undefined,
+        customer_id: user.uid,
+        customer_note: `DELIVERY ADDRESS: ${deliveryAddress}`,
+        items: items.map(i => ({
+          menu_item_id: i.menuItem.id,
+          quantity: i.quantity,
+          unit_price: i.menuItem.base_price,
+          notes: ''
+        }))
+      };
 
       const result = await createOrder(orderData);
 
@@ -160,7 +161,7 @@ export function CartDrawer() {
             
             <div className="flex justify-between items-center mb-6 pt-2 border-t border-slate-100">
               <span className="text-slate-500 font-medium">Total Amount</span>
-              <span className="text-2xl font-black text-slate-900">${totalPrice.toFixed(2)}</span>
+              <span className="text-2xl font-black text-slate-900">${subtotal.toFixed(2)}</span>
             </div>
             
             <Button 
