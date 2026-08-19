@@ -16,7 +16,6 @@ async function getDeliveryBatches(driverId: string) {
       *,
       delivery_batch_orders (
         order_id,
-        sequence_order,
         orders (
           id,
           status,
@@ -26,7 +25,7 @@ async function getDeliveryBatches(driverId: string) {
         )
       )
     `)
-    .eq('driver_id', driverId)
+    .eq('assigned_driver_id', driverId)
     .in('status', ['PENDING', 'IN_PROGRESS'])
     .order('created_at', { ascending: true });
 
