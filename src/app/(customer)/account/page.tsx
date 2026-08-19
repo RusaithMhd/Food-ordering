@@ -9,6 +9,7 @@ import { User, Mail, LogOut, ChevronRight, ShoppingBag, MapPin, Bell } from 'luc
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { syncUserProfile } from '@/actions/auth/update-profile';
 
 export default function AccountPage() {
   const { user, loading } = useAuth();
@@ -45,8 +46,15 @@ export default function AccountPage() {
     }
   };
 
-  const handleSaveDeliveryDetails = () => {
+  const handleSaveDeliveryDetails = async () => {
     localStorage.setItem('deliveryDetails', JSON.stringify(deliveryDetails));
+    if (user?.uid) {
+      await syncUserProfile({
+        userId: user.uid,
+        name: deliveryDetails.name,
+        phone: deliveryDetails.phone
+      });
+    }
     setIsDeliverySheetOpen(false);
   };
 

@@ -219,6 +219,18 @@ export async function createOrder(data: CreateOrderData) {
       return { success: false, error: 'Failed to add items to order' };
     }
 
+    // Sync customer phone number to profiles table if present in checkout snapshot
+    if (data.customer_id) {
+      const snapPhone = delivery_address_snapshot?.phone;
+      if (snapPhone) {
+        const cleanPhone = snapPhone.replace(/[^0-9+]/g, '');
+        await supabase
+          .from('profiles')
+          .update({ phone_number: cleanPhone })
+          .eq('id', data.customer_id);
+      }
+    }
+
     return { success: true, orderId: newOrder.id };
   } catch (error) {
     logger.error('Error in createOrder', { error });
