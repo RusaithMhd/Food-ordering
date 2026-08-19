@@ -11,6 +11,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { OrderActionButtons } from './OrderActionButtons';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; step: number }> = {
   PLACED:           { label: 'Order Placed',     color: 'bg-blue-500',    step: 1 },
@@ -281,6 +282,14 @@ export function OrderHistoryClient({ initialOrders }: { initialOrders: any[] }) 
                             <p className="text-sm text-slate-400 font-medium italic">No delivery address recorded</p>
                           )}
                         </div>
+
+                        {/* Order Actions (Cancel, Notes) */}
+                        <OrderActionButtons 
+                          orderId={order.id} 
+                          status={order.status} 
+                          placedAt={order.placed_at} 
+                          customerNote={order.customer_note} 
+                        />
                       </div>
                     </div>
                   );
