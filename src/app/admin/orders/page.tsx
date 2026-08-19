@@ -37,11 +37,16 @@ export default async function AdminOrdersPage(props: {
   const dateRangeFilter = searchParams?.date_range || 'TODAY';
   const phoneFilter = searchParams?.phone || '';
   
-  const orders = await getAdminOrders(statusFilter, dateRangeFilter, phoneFilter);
-
   const supabase = await createAdminClient();
-  const { data: menuItems } = await supabase.from('menu_items').select('id, name, base_price').eq('is_active', true).order('name');
-  const { data: profiles } = await supabase.from('profiles').select('id, full_name, phone_number').order('full_name');
+
+  const [orders, menuItemsRes, profilesRes] = await Promise.all([
+    getAdminOrders(statusFilter, dateRangeFilter, phoneFilter),
+    supabase.from('menu_items').select('id, name, base_price').eq('is_active', true).order('name'),
+    supabase.from('profiles').select('id, full_name, phone_number').order('full_name')
+  ]);
+
+  const menuItems = menuItemsRes.data;
+  const profiles = profilesRes.data;
 
   const stats = {
     total: orders?.length || 0,

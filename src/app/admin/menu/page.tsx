@@ -8,19 +8,19 @@ import Link from 'next/link';
 async function getAdminMenuData() {
   const supabase = await createAdminClient();
   
-  // Get all branches (for the dropdown)
-  const { data: branches } = await supabase.from('branches').select('id, name').order('name');
-  
-  // Get all categories (for the dropdown)
-  const { data: categories } = await supabase.from('categories').select('id, name, branch_id').order('name');
-  
-  // Get all items
-  const { data: items } = await supabase
-    .from('menu_items')
-    .select('*, categories(name), branches(name)')
-    .order('created_at', { ascending: false });
+  const [branchesRes, categoriesRes, itemsRes] = await Promise.all([
+    supabase.from('branches').select('id, name').order('name'),
+    supabase.from('categories').select('id, name, branch_id').order('name'),
+    supabase.from('menu_items')
+      .select('*, categories(name), branches(name)')
+      .order('created_at', { ascending: false })
+  ]);
 
-  return { branches: branches || [], categories: categories || [], items: items || [] };
+  return { 
+    branches: branchesRes.data || [], 
+    categories: categoriesRes.data || [], 
+    items: itemsRes.data || [] 
+  };
 }
 
 const parseDescription = (desc: string | null | undefined) => {
