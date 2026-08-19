@@ -2,6 +2,8 @@ import { getAdminOrders, updateAdminOrderStatus } from '@/actions/admin/orders';
 import { ShoppingBag, ChevronDown, Calendar, Phone, CheckCircle2, AlertCircle, Eye, ArrowRight, User as UserIcon, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import { OrderStatusSelect } from './OrderStatusSelect';
+import { createAdminClient } from '@/lib/supabase/server';
+import { AdminCreateOrderDialog } from './AdminCreateOrderDialog';
 
 export const metadata = {
   title: 'Manage Orders - Admin',
@@ -34,6 +36,10 @@ export default async function AdminOrdersPage({
   const statusFilter = searchParams.status || 'ALL';
   const orders = await getAdminOrders(statusFilter);
 
+  const supabase = await createAdminClient();
+  const { data: menuItems } = await supabase.from('menu_items').select('id, name, base_price').eq('is_active', true).order('name');
+  const { data: profiles } = await supabase.from('profiles').select('id, full_name, phone_number').order('full_name');
+
   const stats = {
     total: orders?.length || 0,
     preparing: orders?.filter(o => o.status === 'PREPARING').length || 0,
@@ -49,6 +55,9 @@ export default async function AdminOrdersPage({
             Order Management
           </h1>
           <p className="text-slate-500 mt-1.5 font-medium">View and manage all customer orders across your platform.</p>
+        </div>
+        <div>
+          <AdminCreateOrderDialog menuItems={menuItems || []} profiles={profiles || []} />
         </div>
       </div>
 
