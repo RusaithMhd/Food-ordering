@@ -85,7 +85,17 @@ export default async function AdminDashboardPage() {
             <Sparkles className="w-5 h-5 mr-2 text-indigo-500" />
             Quick Actions
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Link href="/admin/orders" className="group flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/50 transition-all">
+              <div className="flex items-center space-x-3">
+                <div className="bg-white p-2 rounded-lg shadow-sm group-hover:text-indigo-600 transition-colors">
+                  <ShoppingBag className="w-5 h-5" />
+                </div>
+                <span className="font-semibold text-slate-700 group-hover:text-indigo-900 transition-colors">Manage Orders</span>
+              </div>
+              <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 group-hover:-rotate-45 transition-all" />
+            </Link>
+
             <Link href="/admin/menu" className="group flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/50 transition-all">
               <div className="flex items-center space-x-3">
                 <div className="bg-white p-2 rounded-lg shadow-sm group-hover:text-indigo-600 transition-colors">

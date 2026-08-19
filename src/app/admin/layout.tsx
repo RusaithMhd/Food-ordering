@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 import Link from 'next/link';
 import { getUser } from '@/lib/auth/getUser';
 import { redirect } from 'next/navigation';
-import { LayoutDashboard, Menu as MenuIcon, Store, Users, Tags, Map } from 'lucide-react';
+import { LayoutDashboard, Menu as MenuIcon, Store, Users, Tags, Map, ShoppingBag } from 'lucide-react';
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const { role } = await getUser();
@@ -51,7 +51,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             <LayoutDashboard className="h-5 w-5 text-slate-500 group-hover:text-indigo-400 transition-colors" />
             <span>Dashboard</span>
           </Link>
-
+          <Link href="/admin/orders" className="flex items-center space-x-3 px-3 py-2.5 rounded-xl transition-all duration-200 hover:bg-white/10 hover:text-white font-medium group">
+            <ShoppingBag className="h-5 w-5 text-slate-500 group-hover:text-indigo-400 transition-colors" />
+            <span>Orders</span>
+          </Link>
           <Link href="/admin/zones" className="flex items-center space-x-3 px-3 py-2.5 rounded-xl transition-all duration-200 hover:bg-white/10 hover:text-white font-medium group">
             <Map className="h-5 w-5 text-slate-500 group-hover:text-indigo-400 transition-colors" />
             <span>Delivery Zones</span>
@@ -98,6 +101,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         <Link href="/admin" className="flex flex-col items-center justify-center w-full h-full text-slate-500 hover:text-indigo-600 transition-colors">
           <LayoutDashboard className="h-[22px] w-[22px] mb-1" />
           <span className="text-[9px] font-bold tracking-tight">Home</span>
+        </Link>
+        <Link href="/admin/orders" className="flex flex-col items-center justify-center w-full h-full text-slate-500 hover:text-indigo-600 transition-colors">
+          <ShoppingBag className="h-[22px] w-[22px] mb-1" />
+          <span className="text-[9px] font-bold tracking-tight">Orders</span>
         </Link>
         <Link href="/admin/zones" className="flex flex-col items-center justify-center w-full h-full text-slate-500 hover:text-indigo-600 transition-colors">
           <Map className="h-[22px] w-[22px] mb-1" />
