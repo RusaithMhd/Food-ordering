@@ -5,7 +5,12 @@ import { getUser } from '@/lib/auth/getUser';
 import { logger } from '@/lib/logger';
 
 interface CreateOrderData {
-  delivery_address_id: string;
+  delivery_address_id?: string;
+  manual_delivery_details?: {
+    name: string;
+    phone: string;
+    location: string;
+  };
   customer_id: string;
   items: {
     menu_item_id: string;
@@ -57,37 +62,54 @@ export async function createOrder(data: CreateOrderData) {
       };
     });
 
-    // Securely fetch address and delivery zone fee
-    const { data: address, error: addressError } = await supabase
-      .from('delivery_addresses')
-      .select('*, delivery_zones(delivery_fee, is_active)')
-      .eq('id', data.delivery_address_id)
-      .eq('customer_id', data.customer_id)
-      .single();
+    let delivery_fee = 0;
+    let zone_id = null;
+    let delivery_address_snapshot: any = {};
 
-    if (addressError || !address) {
-      return { success: false, error: 'Invalid delivery address' };
-    }
+    if (data.manual_delivery_details) {
+      delivery_fee = 2.50; // Default delivery fee
+      delivery_address_snapshot = {
+        address_type: 'CUSTOM',
+        address_line1: data.manual_delivery_details.location,
+        recipient_name: data.manual_delivery_details.name,
+        phone: data.manual_delivery_details.phone,
+        delivery_fee: delivery_fee
+      };
+    } else if (data.delivery_address_id) {
+      // Securely fetch address and delivery zone fee
+      const { data: address, error: addressError } = await supabase
+        .from('delivery_addresses')
+        .select('*, delivery_zones(delivery_fee, is_active)')
+        .eq('id', data.delivery_address_id)
+        .eq('customer_id', data.customer_id)
+        .single();
 
-    if (!address.delivery_zones?.is_active) {
-      return { success: false, error: 'Delivery zone is currently inactive' };
+      if (addressError || !address) {
+        return { success: false, error: 'Invalid delivery address' };
+      }
+
+      if (!address.delivery_zones?.is_active) {
+        return { success: false, error: 'Delivery zone is currently inactive' };
+      }
+
+      delivery_fee = address.delivery_zones.delivery_fee || 0;
+      zone_id = address.zone_id;
+      delivery_address_snapshot = {
+        address_type: address.address_type,
+        address_line1: address.address_line1,
+        address_line2: address.address_line2,
+        landmark: address.landmark,
+        zone_id: address.zone_id,
+        delivery_fee: delivery_fee,
+        recipient_name: address.recipient_name,
+        phone: address.phone
+      };
+    } else {
+      return { success: false, error: 'No delivery address provided' };
     }
 
     const tax = 0; // Tax calculation can be added here
-    const delivery_fee = address.delivery_zones.delivery_fee || 0;
     const total = subtotal + tax + delivery_fee;
-
-    // Create immutable snapshot of the address
-    const delivery_address_snapshot = {
-      address_type: address.address_type,
-      address_line1: address.address_line1,
-      address_line2: address.address_line2,
-      landmark: address.landmark,
-      zone_id: address.zone_id,
-      delivery_fee: delivery_fee,
-      recipient_name: address.recipient_name,
-      phone: address.phone
-    };
 
     // Fetch the default branch
     const { data: defaultBranch } = await supabase.from('branches').select('id').limit(1).single();
@@ -98,7 +120,7 @@ export async function createOrder(data: CreateOrderData) {
       .insert({
         branch_id: defaultBranch?.id,
         customer_id: data.customer_id,
-        delivery_zone_id: address.zone_id,
+        delivery_zone_id: zone_id,
         delivery_address_snapshot,
         subtotal,
         tax,

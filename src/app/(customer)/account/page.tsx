@@ -5,19 +5,36 @@ import { auth } from '@/lib/firebase/client';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { User, Mail, LogOut, ChevronRight, ShoppingBag, MapPin, CreditCard, Bell } from 'lucide-react';
+import { User, Mail, LogOut, ChevronRight, ShoppingBag, MapPin, Bell } from 'lucide-react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import Link from 'next/link';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function AccountPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+
+  const [deliveryDetails, setDeliveryDetails] = useState({
+    name: '',
+    phone: '',
+    location: ''
+  });
+  const [isDeliverySheetOpen, setIsDeliverySheetOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login');
     }
   }, [user, loading, router]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('deliveryDetails');
+    if (saved) {
+      setDeliveryDetails(JSON.parse(saved));
+    } else if (user) {
+      setDeliveryDetails(prev => ({ ...prev, name: user.displayName || '' }));
+    }
+  }, [user]);
 
   const handleSignOut = async () => {
     try {
@@ -26,6 +43,11 @@ export default function AccountPage() {
     } catch (error) {
       console.error('Sign out error', error);
     }
+  };
+
+  const handleSaveDeliveryDetails = () => {
+    localStorage.setItem('deliveryDetails', JSON.stringify(deliveryDetails));
+    setIsDeliverySheetOpen(false);
   };
 
   if (loading || !user) {
@@ -37,11 +59,13 @@ export default function AccountPage() {
     );
   }
 
+  // Use first name for avatar initial
+  const firstName = user.displayName ? user.displayName.split(' ')[0] : 'User';
+  const initial = firstName.charAt(0).toUpperCase();
+
   const menuItems = [
-    { icon: ShoppingBag, label: 'My Orders', href: '/orders', color: 'text-indigo-500', bg: 'bg-indigo-100' },
-    { icon: MapPin, label: 'Saved Addresses', href: '#', color: 'text-emerald-500', bg: 'bg-emerald-100' },
-    { icon: CreditCard, label: 'Payment Methods', href: '#', color: 'text-amber-500', bg: 'bg-amber-100' },
-    { icon: Bell, label: 'Notifications', href: '#', color: 'text-rose-500', bg: 'bg-rose-100' },
+    { icon: ShoppingBag, label: 'My Orders', href: '/orders', color: 'text-indigo-500', bg: 'bg-indigo-100', isLink: true },
+    { icon: Bell, label: 'Notifications', href: '#', color: 'text-rose-500', bg: 'bg-rose-100', isLink: true },
   ];
 
   return (
@@ -60,7 +84,7 @@ export default function AccountPage() {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={user.photoURL} alt="Profile" className="w-full h-full rounded-full object-cover" />
             ) : (
-              <span className="text-2xl font-black text-indigo-700">{user.email?.charAt(0).toUpperCase() || 'U'}</span>
+              <span className="text-2xl font-black text-indigo-700">{initial}</span>
             )}
           </div>
           
@@ -75,6 +99,70 @@ export default function AccountPage() {
 
         {/* Menu Items */}
         <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden mb-8">
+          
+          {/* Delivery Details (Opens Sheet) */}
+          <Sheet open={isDeliverySheetOpen} onOpenChange={setIsDeliverySheetOpen}>
+            <SheetTrigger className="w-full flex items-center justify-between p-5 hover:bg-slate-50 transition-colors border-b border-slate-50">
+              <div className="flex items-center space-x-4">
+                <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-emerald-100">
+                  <MapPin className="w-5 h-5 text-emerald-500" />
+                </div>
+                <div className="text-left">
+                  <span className="block font-semibold text-slate-700">Delivery Details</span>
+                  {deliveryDetails.location && (
+                    <span className="block text-xs text-slate-500">{deliveryDetails.location}</span>
+                  )}
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-slate-300" />
+            </SheetTrigger>
+            <SheetContent side="bottom" className="h-[80vh] md:h-auto rounded-t-3xl sm:rounded-3xl p-6 bg-white border-t border-slate-100">
+              <SheetHeader className="mb-6">
+                <SheetTitle className="text-2xl font-bold text-slate-900">Delivery Details</SheetTitle>
+              </SheetHeader>
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1.5">Full Name</label>
+                  <input 
+                    type="text" 
+                    value={deliveryDetails.name}
+                    onChange={(e) => setDeliveryDetails(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-medium text-slate-900"
+                    placeholder="E.g. Jane Doe"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1.5">Phone Number</label>
+                  <input 
+                    type="tel" 
+                    value={deliveryDetails.phone}
+                    onChange={(e) => setDeliveryDetails(prev => ({ ...prev, phone: e.target.value }))}
+                    className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-medium text-slate-900"
+                    placeholder="E.g. +1 234 567 8900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1.5">Delivery Location</label>
+                  <input 
+                    type="text" 
+                    value={deliveryDetails.location}
+                    onChange={(e) => setDeliveryDetails(prev => ({ ...prev, location: e.target.value }))}
+                    className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-medium text-slate-900"
+                    placeholder="Ex: G-Villa 1, G-Villa 2, B-Villa 2 (G=Girls, B=Boys)"
+                  />
+                </div>
+                <div className="pt-2">
+                  <Button 
+                    onClick={handleSaveDeliveryDetails}
+                    className="w-full h-14 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-lg shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition-all"
+                  >
+                    Save Details
+                  </Button>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+
           {menuItems.map((item, index) => (
             <Link 
               key={index} 

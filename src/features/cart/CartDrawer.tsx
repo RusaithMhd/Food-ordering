@@ -19,87 +19,36 @@ export function CartDrawer() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Address State
-  const [addresses, setAddresses] = useState<any[]>([]);
-  const [zones, setZones] = useState<any[]>([]);
-  const [selectedAddressId, setSelectedAddressId] = useState<string>('');
-  const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
-  
-  // New Address Form State
   const [showNewAddressForm, setShowNewAddressForm] = useState(false);
-  const [newAddress, setNewAddress] = useState({
-    address_type: 'HOSTEL',
-    recipient_name: '',
+  const [deliveryDetails, setDeliveryDetails] = useState({
+    name: '',
     phone: '',
-    address_line1: '',
-    address_line2: '',
-    zone_id: ''
+    location: ''
   });
 
   useEffect(() => {
-    if (isCartOpen && user) {
-      loadAddressesAndZones();
+    if (isCartOpen) {
+      const saved = localStorage.getItem('deliveryDetails');
+      if (saved) {
+        setDeliveryDetails(JSON.parse(saved));
+        setShowNewAddressForm(false);
+      } else {
+        setShowNewAddressForm(true);
+        if (user) {
+          setDeliveryDetails(prev => ({ ...prev, name: user.displayName || '' }));
+        }
+      }
     }
   }, [isCartOpen, user]);
 
-  const loadAddressesAndZones = async () => {
-    setIsLoadingAddresses(true);
-    try {
-      const [addressRes, zoneRes] = await Promise.all([
-        getUserAddresses(),
-        getDeliveryZones()
-      ]);
-      
-      if (zoneRes.success && zoneRes.data) {
-        setZones(zoneRes.data);
-        if (zoneRes.data.length > 0) {
-          setNewAddress(prev => ({ ...prev, zone_id: zoneRes.data[0].id }));
-        }
-      }
-
-      if (addressRes.success && addressRes.data) {
-        setAddresses(addressRes.data);
-        if (addressRes.data.length > 0) {
-          setSelectedAddressId(addressRes.data[0].id);
-          setShowNewAddressForm(false);
-        } else {
-          setShowNewAddressForm(true);
-        }
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsLoadingAddresses(false);
-    }
-  };
-
-  const handleSaveAddress = async () => {
-    if (!newAddress.address_line1 || !newAddress.zone_id || !newAddress.recipient_name || !newAddress.phone) {
-      setError('Please fill out all address fields.');
+  const handleSaveAddress = () => {
+    if (!deliveryDetails.name || !deliveryDetails.phone || !deliveryDetails.location) {
+      setError('Please fill out all delivery details.');
       return;
     }
-    
-    setIsSubmitting(true);
     setError(null);
-    
-    const res = await createAddress({
-      address_type: newAddress.address_type as any,
-      recipient_name: newAddress.recipient_name,
-      phone: newAddress.phone,
-      address_line1: newAddress.address_line1,
-      address_line2: newAddress.address_line2,
-      zone_id: newAddress.zone_id,
-      is_default: true
-    });
-
-    if (res.success && res.data) {
-      await loadAddressesAndZones();
-      setSelectedAddressId(res.data.id);
-      setShowNewAddressForm(false);
-    } else {
-      setError('Failed to save address');
-    }
-    setIsSubmitting(false);
+    localStorage.setItem('deliveryDetails', JSON.stringify(deliveryDetails));
+    setShowNewAddressForm(false);
   };
 
   const handleCheckout = async () => {
@@ -107,8 +56,8 @@ export function CartDrawer() {
       setError('You must sign in to place a delivery order.');
       return;
     }
-    if (!selectedAddressId && !showNewAddressForm) {
-      setError('Please select a delivery address.');
+    if (!deliveryDetails.location || !deliveryDetails.name || !deliveryDetails.phone) {
+      setError('Please save your delivery details before checkout.');
       return;
     }
 
@@ -117,7 +66,7 @@ export function CartDrawer() {
 
     try {
       const orderData = {
-        delivery_address_id: selectedAddressId,
+        manual_delivery_details: deliveryDetails,
         customer_id: user.uid,
         items: items.map(i => ({
           menu_item_id: i.menuItem.id,
@@ -143,8 +92,7 @@ export function CartDrawer() {
     }
   };
 
-  const selectedAddress = addresses.find(a => a.id === selectedAddressId);
-  const deliveryFee = selectedAddress?.delivery_zones?.delivery_fee || 0;
+  const deliveryFee = 2.50;
   const total = subtotal + deliveryFee;
 
   return (
@@ -235,9 +183,9 @@ export function CartDrawer() {
             <div className="mb-4">
               <div className="flex justify-between items-center mb-2">
                 <label className="block text-sm font-semibold text-slate-700">Delivery Details</label>
-                {!showNewAddressForm && addresses.length > 0 && (
+                {!showNewAddressForm && (
                   <button onClick={() => setShowNewAddressForm(true)} className="text-xs font-bold text-amber-600 hover:text-amber-700">
-                    + Add New
+                    {deliveryDetails.location ? 'Change' : '+ Add Details'}
                   </button>
                 )}
               </div>
@@ -247,81 +195,57 @@ export function CartDrawer() {
                   <p className="text-sm text-slate-600 mb-3">Sign in to choose a delivery address</p>
                   <Button onClick={() => router.push('/login')} variant="outline" className="w-full text-xs font-bold">Sign In</Button>
                 </div>
-              ) : isLoadingAddresses ? (
-                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-center animate-pulse text-slate-400 text-sm font-medium">
-                  Loading addresses...
-                </div>
               ) : showNewAddressForm ? (
                 <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
-                  <select 
-                    className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm font-medium"
-                    value={newAddress.address_type}
-                    onChange={(e) => setNewAddress({...newAddress, address_type: e.target.value})}
-                  >
-                    <option value="HOSTEL">Hostel</option>
-                    <option value="UNIVERSITY">University Campus</option>
-                    <option value="PRIVATE_ADDRESS">Private Address</option>
-                  </select>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <input 
-                      type="text"
-                      placeholder="Recipient Name"
-                      className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm"
-                      value={newAddress.recipient_name}
-                      onChange={(e) => setNewAddress({...newAddress, recipient_name: e.target.value})}
-                    />
-                    <input 
-                      type="text"
-                      placeholder="Phone Number"
-                      className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm"
-                      value={newAddress.phone}
-                      onChange={(e) => setNewAddress({...newAddress, phone: e.target.value})}
-                    />
-                  </div>
-                  
-                  <select 
-                    className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm font-medium"
-                    value={newAddress.zone_id}
-                    onChange={(e) => setNewAddress({...newAddress, zone_id: e.target.value})}
-                  >
-                    {zones.map(z => (
-                      <option key={z.id} value={z.id}>{z.name} (+${z.delivery_fee})</option>
-                    ))}
-                  </select>
-
                   <input 
                     type="text"
-                    placeholder="Address Line 1 (e.g., Block A, Room 204)"
-                    className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm"
-                    value={newAddress.address_line1}
-                    onChange={(e) => setNewAddress({...newAddress, address_line1: e.target.value})}
+                    placeholder="Full Name (e.g. Jane Doe)"
+                    className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm font-medium"
+                    value={deliveryDetails.name}
+                    onChange={(e) => setDeliveryDetails({...deliveryDetails, name: e.target.value})}
+                  />
+                  <input 
+                    type="tel"
+                    placeholder="Phone Number (e.g. +1 234 567 890)"
+                    className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm font-medium"
+                    value={deliveryDetails.phone}
+                    onChange={(e) => setDeliveryDetails({...deliveryDetails, phone: e.target.value})}
+                  />
+                  <input 
+                    type="text"
+                    placeholder="Ex: G-Villa 1, G-Villa 2, B-Villa 2 (G=Girls, B=Boys)"
+                    className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm font-medium"
+                    value={deliveryDetails.location}
+                    onChange={(e) => setDeliveryDetails({...deliveryDetails, location: e.target.value})}
                   />
                   
                   <div className="flex space-x-2 pt-2">
-                    {addresses.length > 0 && (
-                      <Button variant="outline" className="flex-1 text-xs" onClick={() => setShowNewAddressForm(false)}>Cancel</Button>
-                    )}
-                    <Button className="flex-1 text-xs bg-slate-900 text-white" onClick={handleSaveAddress} disabled={isSubmitting}>
-                      {isSubmitting ? 'Saving...' : 'Save Address'}
+                    <Button variant="outline" className="flex-1 text-xs" onClick={() => {
+                       const saved = localStorage.getItem('deliveryDetails');
+                       if (saved) setDeliveryDetails(JSON.parse(saved));
+                       setShowNewAddressForm(false);
+                    }}>Cancel</Button>
+                    <Button className="flex-1 text-xs bg-slate-900 text-white" onClick={handleSaveAddress}>
+                      Save Details
                     </Button>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {addresses.map(addr => (
-                    <div 
-                      key={addr.id}
-                      onClick={() => setSelectedAddressId(addr.id)}
-                      className={`p-3 rounded-xl border cursor-pointer transition-all flex items-start space-x-3 ${selectedAddressId === addr.id ? 'bg-amber-50 border-amber-500 shadow-sm' : 'bg-white border-slate-200 hover:border-amber-300'}`}
-                    >
-                      <MapPin className={`w-5 h-5 mt-0.5 shrink-0 ${selectedAddressId === addr.id ? 'text-amber-500' : 'text-slate-400'}`} />
-                      <div className="flex-1">
-                        <div className="font-bold text-sm text-slate-900">{addr.address_type} - {addr.delivery_zones?.name}</div>
-                        <div className="text-xs text-slate-500 mt-0.5">{addr.address_line1}</div>
-                      </div>
+                  <div className="p-3 rounded-xl border bg-amber-50 border-amber-500 shadow-sm flex items-start space-x-3">
+                    <MapPin className="w-5 h-5 mt-0.5 shrink-0 text-amber-500" />
+                    <div className="flex-1">
+                      {deliveryDetails.location ? (
+                        <>
+                          <div className="font-bold text-sm text-slate-900">{deliveryDetails.name}</div>
+                          <div className="text-xs text-slate-700 mt-0.5">{deliveryDetails.location}</div>
+                          <div className="text-xs text-slate-500 mt-0.5">{deliveryDetails.phone}</div>
+                        </>
+                      ) : (
+                        <div className="text-sm font-medium text-slate-500 mt-0.5">No delivery details set</div>
+                      )}
                     </div>
-                  ))}
+                  </div>
                 </div>
               )}
             </div>
