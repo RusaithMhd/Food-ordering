@@ -84,6 +84,7 @@ export const updateAdminOrderStatus = withAuth(
     }
 
     revalidatePath('/admin/orders');
+    revalidatePath('/orders');
     revalidatePath('/kitchen');
     revalidatePath('/delivery');
     return { success: true };
@@ -137,11 +138,7 @@ export const createAdminOrder = withAuth(
         
         let finalPrice = basePrice;
         if (item.unit_price !== undefined) {
-          if (allowedPrices.length > 0 && allowedPrices.includes(Number(item.unit_price))) {
-            finalPrice = Number(item.unit_price);
-          } else if (Number(item.unit_price) === basePrice) {
-            finalPrice = basePrice;
-          }
+          finalPrice = Number(item.unit_price);
         }
 
         const totalPrice = finalPrice * Number(item.quantity);
@@ -169,12 +166,27 @@ export const createAdminOrder = withAuth(
         delivery_fee: delivery_fee
       };
 
+      // Automatically map phone to registered profile if customer_id is not set
+      let targetCustomerId = data.customer_id || null;
+      if (!targetCustomerId && data.phone) {
+        const cleanPhone = data.phone.replace(/[^0-9+]/g, '');
+        const { data: matchedProfile } = await supabase
+          .from('profiles')
+          .select('id')
+          .or(`phone_number.eq.${cleanPhone},phone_number.eq.${data.phone}`)
+          .limit(1)
+          .maybeSingle();
+        if (matchedProfile) {
+          targetCustomerId = matchedProfile.id;
+        }
+      }
+
       // 1. Create order
       const { data: newOrder, error: orderError } = await supabase
         .from('orders')
         .insert({
           branch_id: defaultBranch?.id,
-          customer_id: data.customer_id || null,
+          customer_id: targetCustomerId,
           delivery_address_snapshot,
           subtotal,
           tax: 0,
@@ -207,6 +219,7 @@ export const createAdminOrder = withAuth(
       }
 
       revalidatePath('/admin/orders');
+      revalidatePath('/orders');
       revalidatePath('/kitchen');
       revalidatePath('/delivery');
       return { success: true, orderId: newOrder.id };

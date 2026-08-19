@@ -19,6 +19,8 @@ export const updateOrderStatus = withAuth(
       if (updateError) throw updateError;
 
       // 2. Revalidate the affected paths so the UI updates
+      revalidatePath('/orders');
+      revalidatePath('/admin/orders');
       revalidatePath('/kitchen');
       revalidatePath('/delivery');
 
