@@ -15,6 +15,9 @@ const AuthContext = createContext<AuthContextType>({ user: null, loading: true, 
 
 export const useAuth = () => useContext(AuthContext);
 
+let lastVerifiedToken: string | null = null;
+let cachedRole: string | null = null;
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -28,16 +31,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Sync session with the server and map to Supabase
         try {
           const token = await firebaseUser.getIdToken();
+          
+          // Prevent duplicate verify calls (e.g. from React 18 Strict Mode double-mounts)
+          if (token === lastVerifiedToken) {
+            setUserRole(cachedRole);
+            setLoading(false);
+            return;
+          }
+          
           const res = await verifySession(token);
           if (res.success) {
+            lastVerifiedToken = token;
+            cachedRole = res.role || null;
             setUserRole(res.role || null);
           } else {
             console.error('Session verification failed on server');
+            lastVerifiedToken = null;
+            cachedRole = null;
             setUserRole(null);
             await auth.signOut();
           }
         } catch (error) {
           console.error('Exception during session verification:', error);
+          lastVerifiedToken = null;
+          cachedRole = null;
           setUserRole(null);
           await auth.signOut();
         }

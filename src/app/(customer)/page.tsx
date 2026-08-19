@@ -102,7 +102,7 @@ export default function CustomerMenu() {
   // -------------------------------------------------------------
   // LANDING PAGE (No Branch Selected)
   // -------------------------------------------------------------
-  if (!branchId) {
+  if (!selectedMealType) {
     return (
       <div className="min-h-screen flex flex-col relative overflow-hidden bg-slate-50">
         

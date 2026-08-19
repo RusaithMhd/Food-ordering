@@ -112,9 +112,7 @@ export function BranchProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem('roomId');
     }
     
-    // We would typically trigger a re-fetch of the branch/room details here,
-    // but a page reload or router refresh is often cleaner to reset the entire app state
-    window.location.reload();
+    // State update is sufficient for re-rendering connected components.
   };
 
   const clearContext = () => {
