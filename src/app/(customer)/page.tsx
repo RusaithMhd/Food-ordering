@@ -298,9 +298,15 @@ export default function CustomerMenu() {
   // -------------------------------------------------------------
   // MENU PAGE (Branch Selected)
   // -------------------------------------------------------------
-  const itemsToDisplay = activeCategory 
+  const itemsToDisplay = (activeCategory 
     ? menuItems.filter(item => item.category_id === activeCategory)
-    : menuItems;
+    : menuItems
+  ).filter(item => {
+    if (!selectedMealType) return true;
+    const parts = (item.description || '').split('||meals:');
+    const meals = parts[1] ? parts[1].split(',') : ['breakfast', 'lunch', 'dinner'];
+    return meals.includes(selectedMealType.toLowerCase());
+  });
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] pb-24 font-sans selection:bg-slate-200 selection:text-slate-900">
@@ -385,8 +391,10 @@ export default function CustomerMenu() {
                   <div className="flex items-start justify-between">
                     <h3 className="font-bold text-slate-900 text-lg leading-tight mb-1.5 group-hover:text-amber-600 transition-colors">{item.name}</h3>
                   </div>
-                  {item.description && (
-                    <p className="text-sm text-slate-500 mb-4 line-clamp-2 leading-relaxed">{item.description}</p>
+                  {item.description && item.description.split('||meals:')[0] && (
+                    <p className="text-sm text-slate-500 mb-4 line-clamp-2 leading-relaxed">
+                      {item.description.split('||meals:')[0]}
+                    </p>
                   )}
                   
                   <div className="flex items-center justify-between mt-auto">

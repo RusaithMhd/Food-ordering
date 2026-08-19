@@ -23,12 +23,21 @@ async function getAdminMenuData() {
   return { branches: branches || [], categories: categories || [], items: items || [] };
 }
 
+const parseDescription = (desc: string | null | undefined) => {
+  if (!desc) return { text: '', meals: ['breakfast', 'lunch', 'dinner'] };
+  const parts = desc.split('||meals:');
+  const text = parts[0] || '';
+  const meals = parts[1] ? parts[1].split(',') : ['breakfast', 'lunch', 'dinner'];
+  return { text, meals };
+};
+
 export default async function AdminMenuPage(props: { searchParams: Promise<{ edit?: string }> }) {
   const searchParams = await props.searchParams;
   const { branches, categories, items } = await getAdminMenuData();
   
   const editId = searchParams?.edit;
   const editItem = editId ? items?.find(i => i.id === editId) : null;
+  const { text: editDescText, meals: editMeals } = parseDescription(editItem?.description);
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -66,7 +75,7 @@ export default async function AdminMenuPage(props: { searchParams: Promise<{ edi
 
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Description</label>
-                <textarea name="description" defaultValue={editItem?.description || ''} rows={2} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all resize-none" placeholder="A mouth-watering description..."></textarea>
+                <textarea name="description" defaultValue={editDescText} rows={2} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all resize-none" placeholder="A mouth-watering description..."></textarea>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -113,6 +122,24 @@ export default async function AdminMenuPage(props: { searchParams: Promise<{ edi
                 <label htmlFor="is_vegetarian" className="ml-3 block text-sm font-semibold text-slate-700 cursor-pointer flex items-center">
                   Vegetarian <Leaf className="w-4 h-4 ml-1.5 text-emerald-500" />
                 </label>
+              </div>
+
+              <div className="space-y-2.5">
+                <label className="block text-sm font-semibold text-slate-700">Meal Availability</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="flex items-center justify-center p-3 rounded-xl border border-slate-200 bg-slate-50/50">
+                    <input type="checkbox" name="meal_breakfast" id="meal_breakfast" defaultChecked={editMeals.includes('breakfast')} className="h-4 w-4 text-amber-500 focus:ring-amber-500 border-slate-300 rounded cursor-pointer" />
+                    <label htmlFor="meal_breakfast" className="ml-2 block text-xs font-bold text-slate-700 cursor-pointer select-none">Breakfast</label>
+                  </div>
+                  <div className="flex items-center justify-center p-3 rounded-xl border border-slate-200 bg-slate-50/50">
+                    <input type="checkbox" name="meal_lunch" id="meal_lunch" defaultChecked={editMeals.includes('lunch')} className="h-4 w-4 text-amber-500 focus:ring-amber-500 border-slate-300 rounded cursor-pointer" />
+                    <label htmlFor="meal_lunch" className="ml-2 block text-xs font-bold text-slate-700 cursor-pointer select-none">Lunch</label>
+                  </div>
+                  <div className="flex items-center justify-center p-3 rounded-xl border border-slate-200 bg-slate-50/50">
+                    <input type="checkbox" name="meal_dinner" id="meal_dinner" defaultChecked={editMeals.includes('dinner')} className="h-4 w-4 text-amber-500 focus:ring-amber-500 border-slate-300 rounded cursor-pointer" />
+                    <label htmlFor="meal_dinner" className="ml-2 block text-xs font-bold text-slate-700 cursor-pointer select-none">Dinner</label>
+                  </div>
+                </div>
               </div>
 
               <Button type="submit" className="w-full h-12 rounded-xl text-sm font-bold bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-900/10 active:scale-[0.98] transition-all mt-2">
@@ -164,52 +191,67 @@ export default async function AdminMenuPage(props: { searchParams: Promise<{ edi
                         No items found. Add your first dish!
                       </td>
                     </tr>
-                  ) : items.map((item) => (
-                    <tr key={item.id} className={`hover:bg-slate-50/50 transition-colors group ${editItem?.id === item.id ? 'bg-amber-50/50' : ''}`}>
-                      <td className="px-5 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          {item.image_url ? (
-                            <div className="h-12 w-12 rounded-xl overflow-hidden shadow-sm border border-slate-100 shrink-0 mr-4">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500" src={item.image_url} alt="" />
-                            </div>
-                          ) : (
-                            <div className="h-12 w-12 rounded-xl bg-slate-50 flex items-center justify-center mr-4 border border-slate-100 border-dashed text-[10px] font-bold text-slate-400 uppercase">
-                              No Img
-                            </div>
-                          )}
-                          <div>
-                            <div className="text-sm font-bold text-slate-900 flex items-center">
-                              {item.name}
-                              {item.is_vegetarian && <span title="Vegetarian"><Leaf className="w-3.5 h-3.5 ml-1.5 text-emerald-500" /></span>}
+                  ) : items.map((item) => {
+                    const { text: descText, meals } = parseDescription(item.description);
+
+                    return (
+                      <tr key={item.id} className={`hover:bg-slate-50/50 transition-colors group ${editItem?.id === item.id ? 'bg-amber-50/50' : ''}`}>
+                        <td className="px-5 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            {item.image_url ? (
+                              <div className="h-12 w-12 rounded-xl overflow-hidden shadow-sm border border-slate-100 shrink-0 mr-4">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500" src={item.image_url} alt="" />
+                              </div>
+                            ) : (
+                              <div className="h-12 w-12 rounded-xl bg-slate-50 flex items-center justify-center mr-4 border border-slate-100 border-dashed text-[10px] font-bold text-slate-400 uppercase">
+                                No Img
+                              </div>
+                            )}
+                            <div>
+                              <div className="text-sm font-bold text-slate-900 flex items-center">
+                                {item.name}
+                                {item.is_vegetarian && <span title="Vegetarian"><Leaf className="w-3.5 h-3.5 ml-1.5 text-emerald-500" /></span>}
+                              </div>
+                              <div className="flex gap-1 mt-1 flex-wrap">
+                                {meals.includes('breakfast') && (
+                                  <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase bg-amber-50 text-amber-700 border border-amber-200/50">Breakfast</span>
+                                )}
+                                {meals.includes('lunch') && (
+                                  <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200/50">Lunch</span>
+                                )}
+                                {meals.includes('dinner') && (
+                                  <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase bg-indigo-50 text-indigo-700 border border-indigo-200/50">Dinner</span>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-5 py-4 whitespace-nowrap text-sm text-slate-900 font-extrabold">
-                        LKR {item.base_price.toFixed(2)}
-                      </td>
-                      <td className="px-5 py-4 whitespace-nowrap">
-                        <span className="px-3 py-1 text-xs font-bold rounded-full bg-slate-100 text-slate-600 border border-slate-200">
-                          {item.categories?.name}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Link href={`/admin/menu?edit=${item.id}`}>
-                            <Button variant="ghost" size="sm" className="text-amber-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all">
-                              <Edit2 className="w-4 h-4 mr-1.5" /> Edit
-                            </Button>
-                          </Link>
-                          <form action={async () => { 'use server'; await deleteMenuItem(item.id); }}>
-                            <Button variant="ghost" size="sm" className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
-                              <Trash2 className="w-4 h-4 mr-1.5" /> Delete
-                            </Button>
-                          </form>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="px-5 py-4 whitespace-nowrap text-sm text-slate-900 font-extrabold">
+                          LKR {item.base_price.toFixed(2)}
+                        </td>
+                        <td className="px-5 py-4 whitespace-nowrap">
+                          <span className="px-3 py-1 text-xs font-bold rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                            {item.categories?.name}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Link href={`/admin/menu?edit=${item.id}`}>
+                              <Button variant="ghost" size="sm" className="text-amber-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all">
+                                <Edit2 className="w-4 h-4 mr-1.5" /> Edit
+                              </Button>
+                            </Link>
+                            <form action={async () => { 'use server'; await deleteMenuItem(item.id); }}>
+                              <Button variant="ghost" size="sm" className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
+                                <Trash2 className="w-4 h-4 mr-1.5" /> Delete
+                              </Button>
+                            </form>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -222,48 +264,63 @@ export default async function AdminMenuPage(props: { searchParams: Promise<{ edi
                   No items found. Add your first dish!
                 </div>
               ) : (
-                items.map((item) => (
-                  <div key={item.id} className={`p-4 flex gap-4 hover:bg-slate-50/50 transition-colors ${editItem?.id === item.id ? 'bg-amber-50/50' : ''}`}>
-                    {item.image_url ? (
-                      <div className="h-14 w-14 rounded-2xl overflow-hidden shadow-sm border border-slate-100 shrink-0">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img className="h-full w-full object-cover" src={item.image_url} alt="" />
-                      </div>
-                    ) : (
-                      <div className="h-14 w-14 rounded-2xl bg-slate-50 flex items-center justify-center border border-slate-100 border-dashed text-[10px] font-bold text-slate-400 uppercase shrink-0">
-                        No Img
-                      </div>
-                    )}
-                    <div className="flex-1 flex flex-col justify-between">
-                      <div>
-                        <div className="text-sm font-bold text-slate-900 flex items-center flex-wrap gap-1 leading-tight">
-                          {item.name}
-                          {item.is_vegetarian && <span title="Vegetarian"><Leaf className="w-3.5 h-3.5 text-emerald-500" /></span>}
+                items.map((item) => {
+                  const { text: descText, meals } = parseDescription(item.description);
+
+                  return (
+                    <div key={item.id} className={`p-4 flex gap-4 hover:bg-slate-50/50 transition-colors ${editItem?.id === item.id ? 'bg-amber-50/50' : ''}`}>
+                      {item.image_url ? (
+                        <div className="h-14 w-14 rounded-2xl overflow-hidden shadow-sm border border-slate-100 shrink-0">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img className="h-full w-full object-cover" src={item.image_url} alt="" />
                         </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="px-2 py-0.5 text-[9px] font-bold rounded-full bg-slate-100 text-slate-600 border border-slate-200">
-                            {item.categories?.name}
-                          </span>
+                      ) : (
+                        <div className="h-14 w-14 rounded-2xl bg-slate-50 flex items-center justify-center border border-slate-100 border-dashed text-[10px] font-bold text-slate-400 uppercase shrink-0">
+                          No Img
                         </div>
-                      </div>
-                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100/50">
-                        <span className="text-sm text-slate-900 font-extrabold">LKR {item.base_price.toFixed(2)}</span>
-                        <div className="flex gap-1">
-                          <Link href={`/admin/menu?edit=${item.id}`}>
-                            <Button variant="ghost" size="xs" className="text-amber-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg p-1">
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </Button>
-                          </Link>
-                          <form action={async () => { 'use server'; await deleteMenuItem(item.id); }}>
-                            <Button type="submit" variant="ghost" size="xs" className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg p-1">
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
-                          </form>
+                      )}
+                      <div className="flex-1 flex flex-col justify-between">
+                        <div>
+                          <div className="text-sm font-bold text-slate-900 flex items-center flex-wrap gap-1 leading-tight">
+                            {item.name}
+                            {item.is_vegetarian && <span title="Vegetarian"><Leaf className="w-3.5 h-3.5 text-emerald-500" /></span>}
+                          </div>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="px-2 py-0.5 text-[9px] font-bold rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                              {item.categories?.name}
+                            </span>
+                          </div>
+                          <div className="flex gap-1 mt-1.5 flex-wrap">
+                            {meals.includes('breakfast') && (
+                              <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase bg-amber-50 text-amber-700 border border-amber-200/50">Breakfast</span>
+                            )}
+                            {meals.includes('lunch') && (
+                              <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200/50">Lunch</span>
+                            )}
+                            {meals.includes('dinner') && (
+                              <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase bg-indigo-50 text-indigo-700 border border-indigo-200/50">Dinner</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100/50">
+                          <span className="text-sm text-slate-900 font-extrabold">LKR {item.base_price.toFixed(2)}</span>
+                          <div className="flex gap-1">
+                            <Link href={`/admin/menu?edit=${item.id}`}>
+                              <Button variant="ghost" size="xs" className="text-amber-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg p-1">
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </Link>
+                            <form action={async () => { 'use server'; await deleteMenuItem(item.id); }}>
+                              <Button type="submit" variant="ghost" size="xs" className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg p-1">
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </form>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>
@@ -272,3 +329,4 @@ export default async function AdminMenuPage(props: { searchParams: Promise<{ edi
     </div>
   );
 }
+

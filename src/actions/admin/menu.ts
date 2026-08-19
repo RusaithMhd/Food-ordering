@@ -8,7 +8,7 @@ export const createMenuItem = withAuth(
   async (formData: FormData) => {
     try {
       const name = formData.get('name') as string;
-      const description = formData.get('description') as string;
+      const realDescription = formData.get('description') as string || '';
       const base_price = parseFloat(formData.get('base_price') as string);
       const branch_id = formData.get('branch_id') as string;
       const category_id = formData.get('category_id') as string;
@@ -18,6 +18,12 @@ export const createMenuItem = withAuth(
       if (!name || !base_price || !branch_id || !category_id) {
         return { success: false, error: 'Missing required fields' };
       }
+
+      const selectedMeals: string[] = [];
+      if (formData.get('meal_breakfast') === 'on') selectedMeals.push('breakfast');
+      if (formData.get('meal_lunch') === 'on') selectedMeals.push('lunch');
+      if (formData.get('meal_dinner') === 'on') selectedMeals.push('dinner');
+      const description = `${realDescription}||meals:${selectedMeals.join(',')}`;
 
       const supabase = await createAdminClient();
 
@@ -70,7 +76,7 @@ export const updateMenuItem = withAuth(
     try {
       const id = formData.get('id') as string;
       const name = formData.get('name') as string;
-      const description = formData.get('description') as string;
+      const realDescription = formData.get('description') as string || '';
       const base_price = parseFloat(formData.get('base_price') as string);
       const category_id = formData.get('category_id') as string;
       const preparation_time = parseInt(formData.get('preparation_time') as string) || 15;
@@ -79,6 +85,12 @@ export const updateMenuItem = withAuth(
       if (!id || !name || !base_price || !category_id) {
         return { success: false, error: 'Missing required fields' };
       }
+
+      const selectedMeals: string[] = [];
+      if (formData.get('meal_breakfast') === 'on') selectedMeals.push('breakfast');
+      if (formData.get('meal_lunch') === 'on') selectedMeals.push('lunch');
+      if (formData.get('meal_dinner') === 'on') selectedMeals.push('dinner');
+      const description = `${realDescription}||meals:${selectedMeals.join(',')}`;
 
       const supabase = await createAdminClient();
 
