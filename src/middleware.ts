@@ -7,6 +7,7 @@ export async function middleware(request: NextRequest) {
 
   // Paths that require authentication
   const isProtectedPath = 
+    path === '/' ||
     path.startsWith('/admin') || 
     path.startsWith('/kitchen') || 
     path.startsWith('/delivery') ||
