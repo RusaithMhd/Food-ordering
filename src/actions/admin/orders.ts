@@ -134,7 +134,7 @@ export const createAdminOrder = withAuth(
         };
       });
 
-      const delivery_fee = 2.50; // Default fee
+      const delivery_fee = 0.00; // Default fee
       const total = subtotal + delivery_fee;
 
       // Get default branch

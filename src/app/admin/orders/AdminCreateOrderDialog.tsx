@@ -117,7 +117,7 @@ export function AdminCreateOrderDialog({ menuItems, profiles }: AdminCreateOrder
     return sum + (item.unit_price * item.quantity);
   }, 0);
   
-  const deliveryFee = 2.50;
+  const deliveryFee = 0.00;
   const total = subtotal > 0 ? subtotal + deliveryFee : 0;
 
   const handleSubmit = async (e: React.FormEvent) => {

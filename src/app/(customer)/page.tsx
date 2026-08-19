@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/browser';
 import { MenuItem, Category } from '@/types/menu';
 import { Branch } from '@/services/hotel.service';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Plus, MapPin, Truck, UtensilsCrossed, Sparkles, Coffee, Moon, Clock, Flame, Star, ShieldCheck, ChevronRight, X } from 'lucide-react';
+import { ShoppingCart, Plus, MapPin, Truck, UtensilsCrossed, Sparkles, Coffee, Moon, Clock, Flame, Star, ShieldCheck, ChevronRight, X, Search } from 'lucide-react';
 import { useAuth } from '@/features/auth/AuthProvider';
 import Link from 'next/link';
 import { getDailyQuote } from '@/utils/quotes';
@@ -26,6 +26,7 @@ export default function CustomerMenu() {
   const [selectedMealType, setSelectedMealType] = useState<string | null>(null);
   const [isClosed, setIsClosed] = useState(false);
   const [priceSelectionItem, setPriceSelectionItem] = useState<MenuItem | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const parsePriceOptions = (desc: string | null | undefined): number[] => {
     if (!desc) return [];
@@ -128,7 +129,7 @@ export default function CustomerMenu() {
         }
         
         setCategories(filteredCats);
-        setActiveCategory(filteredCats[0].id);
+        setActiveCategory(null);
       }
 
       const { data: items } = await supabase
@@ -357,14 +358,27 @@ export default function CustomerMenu() {
     ? menuItems.filter(item => item.category_id === activeCategory)
     : menuItems
   ).filter(item => {
-    if (!selectedMealType) return true;
-    const desc = item.description || '';
-    const parts = desc.split('||meals:');
-    if (!parts[1]) return true; // Default fallback
+    // Filter by meal type
+    if (selectedMealType) {
+      const desc = item.description || '';
+      const parts = desc.split('||meals:');
+      if (parts[1]) {
+        const mealAndPrices = parts[1].split('||prices:');
+        const meals = mealAndPrices[0] ? mealAndPrices[0].split(',') : ['breakfast', 'lunch', 'dinner'];
+        if (!meals.includes(selectedMealType.toLowerCase())) return false;
+      }
+    }
     
-    const mealAndPrices = parts[1].split('||prices:');
-    const meals = mealAndPrices[0] ? mealAndPrices[0].split(',') : ['breakfast', 'lunch', 'dinner'];
-    return meals.includes(selectedMealType.toLowerCase());
+    // Filter by search query
+    if (searchQuery.trim() !== '') {
+      const cleanDesc = (item.description || '').split('||meals:')[0] || '';
+      const query = searchQuery.toLowerCase();
+      const nameMatch = item.name.toLowerCase().includes(query);
+      const descMatch = cleanDesc.toLowerCase().includes(query);
+      return nameMatch || descMatch;
+    }
+    
+    return true;
   });
 
   return (
@@ -401,10 +415,42 @@ export default function CustomerMenu() {
           </div>
         </div>
 
+        {/* Search Bar inside sticky header */}
+        <div className="px-5 pb-3 max-w-4xl mx-auto">
+          <div className="relative">
+            <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-slate-400" />
+            <input 
+              type="text" 
+              placeholder={`Search in ${selectedMealType || 'Menu'}...`}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-9 py-2 bg-slate-50 border border-slate-200/60 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all shadow-inner"
+            />
+            {searchQuery && (
+              <button 
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-2.5 p-0.5 rounded-lg hover:bg-slate-200/50 text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Smooth Scrolling Categories */}
         {categories.length > 0 && (
           <div className="w-full overflow-x-auto hide-scrollbar border-t border-slate-100">
             <div className="flex space-x-2 px-5 py-3 max-w-4xl mx-auto">
+              <button
+                onClick={() => setActiveCategory(null)}
+                className={`px-5 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-300 ${
+                  activeCategory === null 
+                    ? 'bg-slate-900 text-white shadow-md shadow-slate-900/20 transform scale-[1.02]' 
+                    : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'
+                }`}
+              >
+                All Items
+              </button>
               {categories.map((cat) => (
                 <button
                   key={cat.id}
@@ -423,8 +469,8 @@ export default function CustomerMenu() {
         )}
       </header>
 
-      {/* Main Menu Grid */}
       <main className="p-5 max-w-4xl mx-auto mt-4">
+
         {isClosed && (
           <div className="mb-6 p-5 rounded-3xl bg-rose-50 border border-rose-100 text-rose-800 text-sm font-semibold flex items-start space-x-3.5 animate-in slide-in-from-top-4 duration-300">
             <Clock className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />

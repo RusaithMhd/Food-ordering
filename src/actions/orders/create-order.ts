@@ -133,7 +133,7 @@ export async function createOrder(data: CreateOrderData) {
     let delivery_address_snapshot: any = {};
 
     if (data.manual_delivery_details) {
-      delivery_fee = 2.50; // Default delivery fee
+      delivery_fee = 0.00; // Default delivery fee
       delivery_address_snapshot = {
         address_type: 'CUSTOM',
         address_line1: data.manual_delivery_details.location,

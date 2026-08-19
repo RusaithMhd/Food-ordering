@@ -94,7 +94,7 @@ export function CartDrawer() {
     }
   };
 
-  const deliveryFee = 2.50;
+  const deliveryFee = 0.00;
   const total = subtotal + deliveryFee;
 
   return (
