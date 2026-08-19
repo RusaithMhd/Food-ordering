@@ -9,16 +9,25 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Hotel, ChefHat, Bike, LayoutDashboard, ShoppingBag, LogOut, LogIn, Menu as MenuIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export function Navbar() {
   const { user, userRole, loading } = useAuth();
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Hide the navbar inside the admin dashboard as it has its own sidebar
   if (pathname?.startsWith('/admin')) {
     return null;
+  }
+
+  if (!mounted) {
+    return <div className="h-14 md:h-16 w-full" />; // Placeholder to prevent layout shift
   }
 
   const handleSignOut = async () => {
