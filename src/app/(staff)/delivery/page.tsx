@@ -120,7 +120,7 @@ export default async function DeliveryDashboard() {
                               </div>
                               <div>
                                 <h4 className="font-bold text-slate-900 text-sm">Order #{order.id.split('-')[0].toUpperCase()}</h4>
-                                <div className="text-xs font-medium text-slate-500 mt-0.5">Collect: ${order.total.toFixed(2)} COD</div>
+                                <div className="text-xs font-medium text-slate-500 mt-0.5">Collect: LKR {order.total.toFixed(2)} COD</div>
                               </div>
                             </div>
                             <div className="text-right">

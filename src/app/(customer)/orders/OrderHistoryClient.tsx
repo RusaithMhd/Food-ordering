@@ -183,7 +183,7 @@ export function OrderHistoryClient({ initialOrders }: { initialOrders: any[] }) 
                             </div>
                           </div>
                           <div className="text-right shrink-0">
-                            <div className="text-xl font-black text-slate-900">${order.total.toFixed(2)}</div>
+                            <div className="text-xl font-black text-slate-900">LKR {order.total.toFixed(2)}</div>
                             <div className="text-[10px] font-bold text-slate-400 mt-0.5 uppercase tracking-wider">Cash on Delivery</div>
                           </div>
                         </div>
@@ -227,7 +227,7 @@ export function OrderHistoryClient({ initialOrders }: { initialOrders: any[] }) 
                                   {item.menu_items?.name}
                                 </div>
                               </div>
-                              <div className="font-bold text-slate-700 text-sm">${item.total_price.toFixed(2)}</div>
+                              <div className="font-bold text-slate-700 text-sm">LKR {item.total_price.toFixed(2)}</div>
                             </div>
                           ))}
                         </div>
@@ -236,17 +236,17 @@ export function OrderHistoryClient({ initialOrders }: { initialOrders: any[] }) 
                         <div className="bg-slate-50 rounded-2xl p-4 mb-5 space-y-1.5">
                           <div className="flex justify-between text-xs">
                             <span className="text-slate-500 font-medium">Subtotal</span>
-                            <span className="font-semibold text-slate-700">${order.subtotal.toFixed(2)}</span>
+                            <span className="font-semibold text-slate-700">LKR {order.subtotal.toFixed(2)}</span>
                           </div>
                           <div className="flex justify-between text-xs">
                             <span className="text-slate-500 font-medium flex items-center">
                               <Bike className="w-3 h-3 mr-1" /> Delivery Fee
                             </span>
-                            <span className="font-semibold text-slate-700">${Number(deliveryFee).toFixed(2)}</span>
+                            <span className="font-semibold text-slate-700">LKR {Number(deliveryFee).toFixed(2)}</span>
                           </div>
                           <div className="flex justify-between text-sm pt-2 border-t border-slate-200 mt-2">
                             <span className="font-bold text-slate-900">Total</span>
-                            <span className="font-black text-slate-900">${order.total.toFixed(2)}</span>
+                            <span className="font-black text-slate-900">LKR {order.total.toFixed(2)}</span>
                           </div>
                         </div>
 

@@ -390,7 +390,7 @@ export default function CustomerMenu() {
                   )}
                   
                   <div className="flex items-center justify-between mt-auto">
-                    <span className="font-extrabold text-slate-900 text-lg">${item.base_price.toFixed(2)}</span>
+                    <span className="font-extrabold text-slate-900 text-lg">LKR {item.base_price.toFixed(2)}</span>
                     <Button 
                       size="sm" 
                       className="rounded-full bg-slate-900 text-white hover:bg-amber-500 hover:text-white px-5 font-semibold transition-all duration-300 shadow-md shadow-slate-900/10 active:scale-95"

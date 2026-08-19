@@ -148,7 +148,7 @@ export default async function AdminDashboardPage() {
           <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">
             Total Revenue
           </h3>
-          <p className="text-3xl font-black text-slate-900">${lifetimeRevenue.toFixed(2)}</p>
+          <p className="text-3xl font-black text-slate-900">LKR {lifetimeRevenue.toFixed(2)}</p>
           <div className="mt-4 flex items-center text-sm font-medium text-emerald-600">
             <TrendingUp className="w-4 h-4 mr-1" />
             <span>Delivered orders</span>
@@ -380,7 +380,7 @@ export default async function AdminDashboardPage() {
                         <OrderStatusSelect orderId={order.id} currentStatus={order.status} />
                       </td>
                       <td className="p-4 text-right">
-                        <div className="font-black text-slate-900">${Number(order.total).toFixed(2)}</div>
+                        <div className="font-black text-slate-900">LKR {Number(order.total).toFixed(2)}</div>
                       </td>
                     </tr>
                   );
@@ -409,7 +409,7 @@ export default async function AdminDashboardPage() {
                 <div key={order.id} className="p-4 space-y-3 hover:bg-slate-50 transition-colors">
                   <div className="flex items-center justify-between">
                     <span className="font-mono font-bold text-slate-900 uppercase">#{order.id.split('-')[0]}</span>
-                    <span className="font-black text-slate-900">${Number(order.total).toFixed(2)}</span>
+                    <span className="font-black text-slate-900">LKR {Number(order.total).toFixed(2)}</span>
                   </div>
                   <div className="text-xs text-slate-500 font-semibold flex items-center justify-between">
                     <span className="flex items-center">

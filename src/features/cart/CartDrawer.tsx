@@ -147,7 +147,7 @@ export function CartDrawer() {
                     </div>
                     
                     <div className="text-slate-900 font-extrabold mt-1">
-                      ${(item.menuItem.base_price * item.quantity).toFixed(2)}
+                      LKR {(item.menuItem.base_price * item.quantity).toFixed(2)}
                     </div>
 
                     <div className="flex items-center space-x-3 mt-auto pt-2">
@@ -253,15 +253,15 @@ export function CartDrawer() {
             <div className="space-y-2 mb-6 pt-4 border-t border-slate-100">
               <div className="flex justify-between items-center">
                 <span className="text-slate-500 text-sm font-medium">Subtotal</span>
-                <span className="text-sm font-bold text-slate-900">${subtotal.toFixed(2)}</span>
+                <span className="text-sm font-bold text-slate-900">LKR {subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-slate-500 text-sm font-medium">Delivery Fee</span>
-                <span className="text-sm font-bold text-slate-900">${deliveryFee.toFixed(2)}</span>
+                <span className="text-sm font-bold text-slate-900">LKR {deliveryFee.toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center pt-2">
                 <span className="text-slate-800 font-bold">Total Amount</span>
-                <span className="text-2xl font-black text-amber-600">${total.toFixed(2)}</span>
+                <span className="text-2xl font-black text-amber-600">LKR {total.toFixed(2)}</span>
               </div>
             </div>
             

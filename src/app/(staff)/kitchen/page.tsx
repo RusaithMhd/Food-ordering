@@ -130,7 +130,7 @@ export default async function KitchenDashboard() {
                         </div>
                       </div>
                       <div className="text-right shrink-0 ml-3">
-                        <div className="text-lg font-black text-slate-900">${order.total.toFixed(2)}</div>
+                        <div className="text-lg font-black text-slate-900">LKR {order.total.toFixed(2)}</div>
                       </div>
                     </div>
 
@@ -230,7 +230,7 @@ export default async function KitchenDashboard() {
                         </div>
                       </div>
                       <div className="text-right shrink-0 ml-3">
-                        <div className="text-lg font-black text-slate-900">${order.total.toFixed(2)}</div>
+                        <div className="text-lg font-black text-slate-900">LKR {order.total.toFixed(2)}</div>
                       </div>
                     </div>
 

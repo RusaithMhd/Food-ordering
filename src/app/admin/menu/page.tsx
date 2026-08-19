@@ -71,10 +71,10 @@ export default async function AdminMenuPage(props: { searchParams: Promise<{ edi
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Price ($) <span className="text-rose-500">*</span></label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Price (LKR) <span className="text-rose-500">*</span></label>
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">$</span>
-                    <input type="number" step="0.01" name="base_price" defaultValue={editItem?.base_price || ''} required className="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all" placeholder="0.00" />
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">LKR</span>
+                    <input type="number" step="0.01" name="base_price" defaultValue={editItem?.base_price || ''} required className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all" placeholder="0.00" />
                   </div>
                 </div>
                 <div>
@@ -145,7 +145,8 @@ export default async function AdminMenuPage(props: { searchParams: Promise<{ edi
               </form>
             </div>
             
-            <div className="overflow-x-auto rounded-2xl border border-slate-100">
+            {/* Desktop View */}
+            <div className="hidden md:block overflow-x-auto rounded-2xl border border-slate-100">
               <table className="min-w-full divide-y divide-slate-100">
                 <thead className="bg-slate-50">
                   <tr>
@@ -182,11 +183,11 @@ export default async function AdminMenuPage(props: { searchParams: Promise<{ edi
                               {item.name}
                               {item.is_vegetarian && <span title="Vegetarian"><Leaf className="w-3.5 h-3.5 ml-1.5 text-emerald-500" /></span>}
                             </div>
-                            </div>
+                          </div>
                         </div>
                       </td>
                       <td className="px-5 py-4 whitespace-nowrap text-sm text-slate-900 font-extrabold">
-                        ${item.base_price.toFixed(2)}
+                        LKR {item.base_price.toFixed(2)}
                       </td>
                       <td className="px-5 py-4 whitespace-nowrap">
                         <span className="px-3 py-1 text-xs font-bold rounded-full bg-slate-100 text-slate-600 border border-slate-200">
@@ -211,6 +212,59 @@ export default async function AdminMenuPage(props: { searchParams: Promise<{ edi
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile View */}
+            <div className="md:hidden divide-y divide-slate-100">
+              {items.length === 0 ? (
+                <div className="py-12 text-center text-slate-400 font-medium">
+                  <UtensilsCrossed className="w-10 h-10 mx-auto text-slate-200 mb-3" />
+                  No items found. Add your first dish!
+                </div>
+              ) : (
+                items.map((item) => (
+                  <div key={item.id} className={`p-4 flex gap-4 hover:bg-slate-50/50 transition-colors ${editItem?.id === item.id ? 'bg-amber-50/50' : ''}`}>
+                    {item.image_url ? (
+                      <div className="h-14 w-14 rounded-2xl overflow-hidden shadow-sm border border-slate-100 shrink-0">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img className="h-full w-full object-cover" src={item.image_url} alt="" />
+                      </div>
+                    ) : (
+                      <div className="h-14 w-14 rounded-2xl bg-slate-50 flex items-center justify-center border border-slate-100 border-dashed text-[10px] font-bold text-slate-400 uppercase shrink-0">
+                        No Img
+                      </div>
+                    )}
+                    <div className="flex-1 flex flex-col justify-between">
+                      <div>
+                        <div className="text-sm font-bold text-slate-900 flex items-center flex-wrap gap-1 leading-tight">
+                          {item.name}
+                          {item.is_vegetarian && <span title="Vegetarian"><Leaf className="w-3.5 h-3.5 text-emerald-500" /></span>}
+                        </div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="px-2 py-0.5 text-[9px] font-bold rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                            {item.categories?.name}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100/50">
+                        <span className="text-sm text-slate-900 font-extrabold">LKR {item.base_price.toFixed(2)}</span>
+                        <div className="flex gap-1">
+                          <Link href={`/admin/menu?edit=${item.id}`}>
+                            <Button variant="ghost" size="xs" className="text-amber-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg p-1">
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </Link>
+                          <form action={async () => { 'use server'; await deleteMenuItem(item.id); }}>
+                            <Button type="submit" variant="ghost" size="xs" className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg p-1">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

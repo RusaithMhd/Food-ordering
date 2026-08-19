@@ -62,17 +62,17 @@ export default async function DeliveryZonesPage(props: { searchParams: Promise<{
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Delivery Fee ($) <span className="text-rose-500">*</span></label>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Delivery Fee (LKR) <span className="text-rose-500">*</span></label>
                     <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">$</span>
-                      <input type="number" step="0.01" name="delivery_fee" defaultValue={editZone?.delivery_fee || ''} required className="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all" placeholder="0.00" />
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">LKR</span>
+                      <input type="number" step="0.01" name="delivery_fee" defaultValue={editZone?.delivery_fee || ''} required className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all" placeholder="0.00" />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Min. Order ($)</label>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Min. Order (LKR)</label>
                     <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">$</span>
-                      <input type="number" step="0.01" name="minimum_order_value" defaultValue={editZone?.minimum_order || '0.00'} className="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all" />
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">LKR</span>
+                      <input type="number" step="0.01" name="minimum_order_value" defaultValue={editZone?.minimum_order || '0.00'} className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all" />
                     </div>
                   </div>
                 </div>
@@ -182,10 +182,10 @@ export default async function DeliveryZonesPage(props: { searchParams: Promise<{
                           <div className="text-sm text-slate-600 truncate max-w-[200px]">{zone.description || '-'}</div>
                         </td>
                         <td className="py-4 px-6 text-right">
-                          <div className="font-bold text-indigo-600">${zone.delivery_fee.toFixed(2)}</div>
+                          <div className="font-bold text-indigo-600">LKR {zone.delivery_fee.toFixed(2)}</div>
                         </td>
                         <td className="py-4 px-6 text-right">
-                          <div className="font-semibold text-slate-700">${zone.minimum_order.toFixed(2)}</div>
+                          <div className="font-semibold text-slate-700">LKR {zone.minimum_order.toFixed(2)}</div>
                         </td>
                         <td className="py-4 px-6 text-center">
                           {zone.is_active ? (

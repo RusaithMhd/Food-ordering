@@ -173,7 +173,7 @@ export default async function AdminOrdersPage({
                         <OrderStatusSelect orderId={order.id} currentStatus={order.status} />
                       </td>
                       <td className="p-4 text-right">
-                        <div className="font-black text-slate-900">${Number(order.total).toFixed(2)}</div>
+                        <div className="font-black text-slate-900">LKR {Number(order.total).toFixed(2)}</div>
                       </td>
                     </tr>
                   );
@@ -202,7 +202,7 @@ export default async function AdminOrdersPage({
                 <div key={order.id} className="p-4 space-y-3 hover:bg-slate-50 transition-colors">
                   <div className="flex items-center justify-between">
                     <span className="font-mono font-bold text-slate-900 uppercase">#{order.id.split('-')[0]}</span>
-                    <span className="font-black text-slate-900">${Number(order.total).toFixed(2)}</span>
+                    <span className="font-black text-slate-900">LKR {Number(order.total).toFixed(2)}</span>
                   </div>
                   <div className="text-xs text-slate-500 font-semibold flex items-center justify-between">
                     <span className="flex items-center">
@@ -236,7 +236,7 @@ export default async function AdminOrdersPage({
                     {order.order_items?.map((item: any, i: number) => (
                       <div key={i} className="flex justify-between">
                         <span>{item.quantity}x {item.menu_items?.name}</span>
-                        <span className="font-bold">${Number(item.total_price).toFixed(2)}</span>
+                        <span className="font-bold">LKR {Number(item.total_price).toFixed(2)}</span>
                       </div>
                     ))}
                   </div>
