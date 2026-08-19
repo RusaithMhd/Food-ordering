@@ -26,9 +26,7 @@ export function parseClosingTimes(timezoneVal: string | null | undefined): Closi
     if (key === 'R') result.date = val;
   }
   
-  if (result.date && result.date !== currentSLDate) {
-    return { breakfast: '', lunch: '', dinner: '', date: currentSLDate };
-  }
+
   
   return result;
 }

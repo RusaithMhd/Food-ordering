@@ -285,67 +285,9 @@ export default function CustomerMenu() {
 
           </div>
           
-          {availableBranches.length === 0 && !isLoading && (
-            <div className="mt-8 p-8 text-center bg-white rounded-3xl border border-slate-100 border-dashed">
-              <p className="text-slate-500 font-medium">Our kitchens are currently closed.</p>
-            </div>
-          )}
 
-          {/* New Sections */}
-          <div className="mt-16 w-full animate-in slide-in-from-bottom-8 fade-in duration-700 delay-300">
-            
-            {/* Chef's Highlights Placeholder */}
-            <div className="mb-16">
-              <div className="flex items-center justify-between mb-6 px-2">
-                <h3 className="text-2xl font-black text-slate-900 flex items-center">
-                  <Flame className="w-6 h-6 text-orange-500 mr-2" />
-                  Popular Right Now
-                </h3>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 hover:shadow-lg transition-all group overflow-hidden relative">
-                    <div className="absolute top-2 right-2 bg-white/80 backdrop-blur-sm px-2 py-1 rounded-full flex items-center z-10 text-xs font-bold text-slate-700 shadow-sm">
-                      <Star className="w-3 h-3 text-amber-500 mr-1 fill-amber-500" /> 4.9
-                    </div>
-                    <div className="aspect-square bg-slate-100 rounded-xl mb-3 overflow-hidden">
-                      <div className="w-full h-full bg-gradient-to-tr from-slate-200 to-slate-100 group-hover:scale-105 transition-transform duration-500" />
-                    </div>
-                    <div className="h-4 bg-slate-100 rounded w-3/4 mb-2"></div>
-                    <div className="h-3 bg-slate-50 rounded w-1/2"></div>
-                  </div>
-                ))}
-              </div>
-            </div>
 
-            {/* Guarantees Section */}
-            <div className="bg-white/80 backdrop-blur-lg rounded-[2rem] p-8 md:p-12 border border-slate-200/60 shadow-xl shadow-slate-200/20">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-                <div className="flex flex-col items-center">
-                  <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mb-4 text-amber-600">
-                    <Clock className="w-8 h-8" />
-                  </div>
-                  <h4 className="text-lg font-bold text-slate-900 mb-1">Lightning Fast</h4>
-                  <p className="text-slate-500 text-sm">Delivery in under 30 minutes, directly to your door.</p>
-                </div>
-                <div className="flex flex-col items-center">
-                  <div className="w-16 h-16 bg-rose-100 rounded-2xl flex items-center justify-center mb-4 text-rose-600">
-                    <Flame className="w-8 h-8" />
-                  </div>
-                  <h4 className="text-lg font-bold text-slate-900 mb-1">Always Hot</h4>
-                  <p className="text-slate-500 text-sm">Special thermal packaging ensures your food arrives fresh.</p>
-                </div>
-                <div className="flex flex-col items-center">
-                  <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mb-4 text-emerald-600">
-                    <ShieldCheck className="w-8 h-8" />
-                  </div>
-                  <h4 className="text-lg font-bold text-slate-900 mb-1">Premium Quality</h4>
-                  <p className="text-slate-500 text-sm">Made with 100% locally sourced, premium ingredients.</p>
-                </div>
-              </div>
-            </div>
-            
-          </div>
+
         </div>
       </div>
     );

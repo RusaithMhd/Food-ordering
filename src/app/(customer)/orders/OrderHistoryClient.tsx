@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Clock, Package, MapPin, Phone, User, Bike, CalendarDays, Filter, CalendarIcon } from 'lucide-react';
+import { Clock, Package, MapPin, Phone, User, Bike, CalendarDays, Filter, CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -41,6 +41,18 @@ function formatDateGroup(dateString: string) {
 export function OrderHistoryClient({ initialOrders }: { initialOrders: any[] }) {
   const [filter, setFilter] = useState<'ALL' | 'ACTIVE' | 'PAST'>('ALL');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ORDERS_PER_PAGE = 2;
+
+  const handleFilterChange = (newFilter: 'ALL' | 'ACTIVE' | 'PAST') => {
+    setFilter(newFilter);
+    setCurrentPage(1);
+  };
+
+  const handleDateChange = (date: Date | undefined) => {
+    setSelectedDate(date);
+    setCurrentPage(1);
+  };
 
   const filteredOrders = initialOrders.filter((order: any) => {
     // 1. Status Filter
@@ -63,8 +75,14 @@ export function OrderHistoryClient({ initialOrders }: { initialOrders: any[] }) 
     return true;
   });
 
+  const totalPages = Math.ceil(filteredOrders.length / ORDERS_PER_PAGE);
+  const paginatedOrders = filteredOrders.slice(
+    (currentPage - 1) * ORDERS_PER_PAGE,
+    currentPage * ORDERS_PER_PAGE
+  );
+
   // Group by date
-  const groupedOrders = filteredOrders.reduce((acc, order: any) => {
+  const groupedOrders = paginatedOrders.reduce((acc, order: any) => {
     const group = formatDateGroup(order.placed_at);
     if (!acc[group]) acc[group] = [];
     acc[group].push(order);
@@ -94,7 +112,7 @@ export function OrderHistoryClient({ initialOrders }: { initialOrders: any[] }) 
           {['ALL', 'ACTIVE', 'PAST'].map((f) => (
             <button
               key={f}
-              onClick={() => setFilter(f as any)}
+              onClick={() => handleFilterChange(f as any)}
               className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${
                 filter === f 
                   ? 'bg-white text-slate-900 shadow-sm' 
@@ -121,7 +139,7 @@ export function OrderHistoryClient({ initialOrders }: { initialOrders: any[] }) 
               <Calendar
                 mode="single"
                 selected={selectedDate}
-                onSelect={setSelectedDate}
+                onSelect={handleDateChange}
                 className="p-3"
               />
             </PopoverContent>
@@ -129,7 +147,7 @@ export function OrderHistoryClient({ initialOrders }: { initialOrders: any[] }) 
 
           {selectedDate && (
             <button 
-              onClick={() => setSelectedDate(undefined)}
+              onClick={() => handleDateChange(undefined)}
               className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-sm font-bold transition-colors shrink-0"
             >
               Clear
@@ -297,6 +315,65 @@ export function OrderHistoryClient({ initialOrders }: { initialOrders: any[] }) 
               </div>
             </div>
           ))}
+
+          {/* Gorgeous Premium Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between border-t border-slate-200 pt-6 mt-8 select-none">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setCurrentPage(prev => Math.max(prev - 1, 1));
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                disabled={currentPage === 1}
+                className="h-10 px-4 rounded-xl border-slate-200 hover:bg-slate-50 font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 disabled:pointer-events-none transition-all duration-200"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Previous
+              </Button>
+
+              <div className="hidden sm:flex items-center gap-1.5">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                  const isCurrent = page === currentPage;
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => {
+                        setCurrentPage(page);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className={`w-9 h-9 rounded-xl text-xs font-bold transition-all duration-200 active:scale-90 ${
+                        isCurrent 
+                          ? 'bg-slate-900 text-white shadow-md shadow-slate-900/10' 
+                          : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50 hover:text-slate-700'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <span className="sm:hidden text-xs font-bold text-slate-500">
+                Page {currentPage} of {totalPages}
+              </span>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setCurrentPage(prev => Math.min(prev + 1, totalPages));
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                disabled={currentPage === totalPages}
+                className="h-10 px-4 rounded-xl border-slate-200 hover:bg-slate-50 font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 disabled:pointer-events-none transition-all duration-200"
+              >
+                Next
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>

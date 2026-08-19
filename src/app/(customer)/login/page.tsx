@@ -85,9 +85,12 @@ export default function LoginPage() {
             )}
           </Button>
           
-          <div className="mt-8 pt-8 border-t border-slate-100">
-            <p className="text-xs text-slate-400 font-medium">
+          <div className="mt-8 pt-8 border-t border-slate-100 flex flex-col items-center justify-center space-y-1.5 select-none">
+            <p className="text-[10px] text-slate-400 font-bold tracking-tight">
               Secured by Firebase Auth
+            </p>
+            <p className="text-[9px] text-slate-300 font-semibold tracking-tight">
+              Developed by <a href="https://www.rusaith.com" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-500 hover:underline font-bold">Rusaith</a>
             </p>
           </div>
         </div>

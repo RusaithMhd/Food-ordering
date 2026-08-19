@@ -8,6 +8,7 @@ import { CartProvider } from "@/features/cart/CartContext";
 import { CartDrawer } from "@/features/cart/CartDrawer";
 import { Navbar } from "@/components/navigation/Navbar";
 import { MobileNav } from "@/components/navigation/MobileNav";
+import { Footer } from "@/components/navigation/Footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,7 +41,10 @@ export default function RootLayout({
             <BranchProvider>
               <CartProvider>
                 <Navbar />
-                {children}
+                <main className="flex-1">
+                  {children}
+                </main>
+                <Footer />
                 <MobileNav />
                 <CartDrawer />
               </CartProvider>

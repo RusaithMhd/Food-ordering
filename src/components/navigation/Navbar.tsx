@@ -164,17 +164,20 @@ export function Navbar() {
           <div className="flex items-center space-x-2 md:space-x-3">
             {!loading && (
               <>
-                {user ? (
-                  <div className="flex items-center space-x-2 md:space-x-3">
-                    <div className="flex items-center space-x-2 bg-slate-50 border border-slate-100 rounded-full px-2 md:px-3 py-1">
-                      <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center border border-indigo-200">
-                        <span className="text-[10px] font-bold text-indigo-700">{user.email?.charAt(0).toUpperCase() || 'U'}</span>
+                 {user ? (
+                  <div className="flex items-center space-x-3">
+                    <Link href="/account" className="flex items-center space-x-2.5 bg-white hover:bg-slate-50 hover:border-slate-300 border border-slate-200 rounded-full pl-2 pr-4 py-1.5 transition-all shadow-sm hover:shadow active:scale-[0.97] select-none group">
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-600 to-indigo-500 flex items-center justify-center border border-indigo-400 shadow-inner group-hover:scale-105 transition-transform duration-200 shrink-0">
+                        <span className="text-[11px] font-black text-white">{user.email?.charAt(0).toUpperCase() || 'U'}</span>
                       </div>
-                      <span className="hidden sm:inline-block text-sm font-medium text-slate-600 truncate max-w-[100px]">
-                        {user.displayName || user.email?.split('@')[0]}
-                      </span>
-                    </div>
-                    <Button onClick={handleSignOut} variant="ghost" size="icon" className="hidden md:flex rounded-full text-slate-400 hover:text-red-600 hover:bg-red-50">
+                      <div className="flex flex-col text-left">
+                        <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest leading-none">Account</span>
+                        <span className="text-[11px] font-bold text-slate-700 truncate max-w-[90px] mt-0.5 leading-none">
+                          {user.displayName || user.email?.split('@')[0]}
+                        </span>
+                      </div>
+                    </Link>
+                    <Button onClick={handleSignOut} variant="ghost" size="icon" className="hidden md:flex rounded-full w-9 h-9 border border-slate-200 bg-white hover:bg-red-50 text-slate-400 hover:text-red-600 shadow-sm active:scale-95 transition-all shrink-0">
                       <LogOut className="w-4 h-4" />
                     </Button>
                   </div>
