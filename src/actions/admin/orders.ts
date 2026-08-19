@@ -77,7 +77,7 @@ export const createAdminOrder = withAuth(
     phone: string;
     location: string;
     customer_note?: string;
-    items: { menu_item_id: string; quantity: number }[];
+    items: { menu_item_id: string; quantity: number; unit_price?: number }[];
   }) => {
     try {
       const supabase = await createAdminClient();
@@ -90,24 +90,45 @@ export const createAdminOrder = withAuth(
       const menuItemIds = data.items.map(i => i.menu_item_id);
       const { data: menuItems, error: menuError } = await supabase
         .from('menu_items')
-        .select('id, base_price, name')
+        .select('id, base_price, name, description')
         .in('id', menuItemIds);
 
       if (menuError || !menuItems || menuItems.length !== data.items.length) {
         return { success: false, error: 'One or more menu items could not be found' };
       }
 
+      const parsePriceOptions = (desc: string | null | undefined): number[] => {
+        if (!desc) return [];
+        const parts = desc.split('||prices:');
+        if (parts.length < 2) return [];
+        const pricePart = parts[1].split('||')[0];
+        return pricePart.split(',').map(Number).filter(n => !isNaN(n));
+      };
+
       const priceMap = new Map(menuItems.map(item => [item.id, item.base_price]));
+      const descMap = new Map(menuItems.map(item => [item.id, item.description]));
       let subtotal = 0;
       
       const secureOrderItems = data.items.map(item => {
-        const unitPrice = Number(priceMap.get(item.menu_item_id) || 0);
-        const totalPrice = unitPrice * Number(item.quantity);
+        const basePrice = Number(priceMap.get(item.menu_item_id) || 0);
+        const desc = descMap.get(item.menu_item_id);
+        const allowedPrices = parsePriceOptions(desc);
+        
+        let finalPrice = basePrice;
+        if (item.unit_price !== undefined) {
+          if (allowedPrices.length > 0 && allowedPrices.includes(Number(item.unit_price))) {
+            finalPrice = Number(item.unit_price);
+          } else if (Number(item.unit_price) === basePrice) {
+            finalPrice = basePrice;
+          }
+        }
+
+        const totalPrice = finalPrice * Number(item.quantity);
         subtotal += totalPrice;
         return {
           menu_item_id: item.menu_item_id,
           quantity: item.quantity,
-          unit_price: unitPrice,
+          unit_price: finalPrice,
           total_price: totalPrice,
           notes: ''
         };

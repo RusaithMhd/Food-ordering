@@ -59,7 +59,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setItems((currentItems) => {
       // Check if exact same item with same notes exists
       const existingItemIndex = currentItems.findIndex(
-        (item) => item.menuItem.id === menuItem.id && item.notes === notes
+        (item) => item.menuItem.id === menuItem.id && 
+                  item.menuItem.base_price === menuItem.base_price && 
+                  item.notes === notes
       );
 
       if (existingItemIndex >= 0) {

@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/browser';
 import { MenuItem, Category } from '@/types/menu';
 import { Branch } from '@/services/hotel.service';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Plus, MapPin, Truck, UtensilsCrossed, Sparkles, Coffee, Moon, Clock, Flame, Star, ShieldCheck, ChevronRight } from 'lucide-react';
+import { ShoppingCart, Plus, MapPin, Truck, UtensilsCrossed, Sparkles, Coffee, Moon, Clock, Flame, Star, ShieldCheck, ChevronRight, X } from 'lucide-react';
 import { useAuth } from '@/features/auth/AuthProvider';
 import Link from 'next/link';
 import { getDailyQuote } from '@/utils/quotes';
@@ -25,6 +25,24 @@ export default function CustomerMenu() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [selectedMealType, setSelectedMealType] = useState<string | null>(null);
   const [isClosed, setIsClosed] = useState(false);
+  const [priceSelectionItem, setPriceSelectionItem] = useState<MenuItem | null>(null);
+
+  const parsePriceOptions = (desc: string | null | undefined): number[] => {
+    if (!desc) return [];
+    const parts = desc.split('||prices:');
+    if (parts.length < 2) return [];
+    const pricePart = parts[1].split('||')[0];
+    return pricePart.split(',').map(Number).filter(n => !isNaN(n));
+  };
+
+  const handleAddClick = (item: MenuItem) => {
+    const prices = parsePriceOptions(item.description);
+    if (prices.length > 0) {
+      setPriceSelectionItem(item);
+    } else {
+      addItem(item);
+    }
+  };
 
   useEffect(() => {
     if (!branch?.timezone || !selectedMealType) {
@@ -340,8 +358,12 @@ export default function CustomerMenu() {
     : menuItems
   ).filter(item => {
     if (!selectedMealType) return true;
-    const parts = (item.description || '').split('||meals:');
-    const meals = parts[1] ? parts[1].split(',') : ['breakfast', 'lunch', 'dinner'];
+    const desc = item.description || '';
+    const parts = desc.split('||meals:');
+    if (!parts[1]) return true; // Default fallback
+    
+    const mealAndPrices = parts[1].split('||prices:');
+    const meals = mealAndPrices[0] ? mealAndPrices[0].split(',') : ['breakfast', 'lunch', 'dinner'];
     return meals.includes(selectedMealType.toLowerCase());
   });
 
@@ -449,7 +471,7 @@ export default function CustomerMenu() {
                     <Button 
                       size="sm" 
                       className="rounded-full bg-slate-900 text-white hover:bg-amber-500 hover:text-white px-5 font-semibold transition-all duration-300 shadow-md shadow-slate-900/10 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-900 disabled:hover:text-white"
-                      onClick={() => addItem(item)}
+                      onClick={() => handleAddClick(item)}
                       disabled={isClosed}
                     >
                       <Plus className="h-4 w-4 mr-1.5" /> Add
@@ -501,6 +523,41 @@ export default function CustomerMenu() {
               Checkout <span className="ml-2">→</span>
             </span>
           </Button>
+        </div>
+      )}
+      {/* Price Selection Modal */}
+      {priceSelectionItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-sm rounded-[2rem] p-6 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200 text-center relative">
+            <button 
+              onClick={() => setPriceSelectionItem(null)}
+              className="absolute right-5 top-5 p-1.5 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-50 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-amber-500 shadow-inner">
+              <Sparkles className="w-8 h-8" />
+            </div>
+
+            <h3 className="text-xl font-black text-slate-900 mb-1">{priceSelectionItem.name}</h3>
+            <p className="text-slate-400 text-[10px] font-bold mb-6 uppercase tracking-wider">Select Portion / Price Option</p>
+
+            <div className="space-y-2.5">
+              {parsePriceOptions(priceSelectionItem.description).map(price => (
+                <button
+                  key={price}
+                  onClick={() => {
+                    addItem({ ...priceSelectionItem, base_price: price });
+                    setPriceSelectionItem(null);
+                  }}
+                  className="w-full py-3 px-4 bg-slate-50 hover:bg-amber-500 hover:text-white border border-slate-200/60 rounded-2xl font-bold text-sm text-slate-800 transition-all active:scale-[0.98] shadow-sm hover:shadow-md"
+                >
+                  LKR {price.toFixed(2)}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -24,11 +24,19 @@ async function getAdminMenuData() {
 }
 
 const parseDescription = (desc: string | null | undefined) => {
-  if (!desc) return { text: '', meals: ['breakfast', 'lunch', 'dinner'] };
+  if (!desc) return { text: '', meals: ['breakfast', 'lunch', 'dinner'], prices: [] as number[] };
   const parts = desc.split('||meals:');
   const text = parts[0] || '';
-  const meals = parts[1] ? parts[1].split(',') : ['breakfast', 'lunch', 'dinner'];
-  return { text, meals };
+  
+  let meals = ['breakfast', 'lunch', 'dinner'];
+  let prices: number[] = [];
+  
+  if (parts[1]) {
+    const mealAndPrices = parts[1].split('||prices:');
+    meals = mealAndPrices[0] ? mealAndPrices[0].split(',') : ['breakfast', 'lunch', 'dinner'];
+    prices = mealAndPrices[1] ? mealAndPrices[1].split(',').map(Number).filter(n => !isNaN(n)) : [];
+  }
+  return { text, meals, prices };
 };
 
 export default async function AdminMenuPage(props: { searchParams: Promise<{ edit?: string }> }) {
@@ -37,7 +45,7 @@ export default async function AdminMenuPage(props: { searchParams: Promise<{ edi
   
   const editId = searchParams?.edit;
   const editItem = editId ? items?.find(i => i.id === editId) : null;
-  const { text: editDescText, meals: editMeals } = parseDescription(editItem?.description);
+  const { text: editDescText, meals: editMeals, prices: editPrices } = parseDescription(editItem?.description);
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -105,6 +113,17 @@ export default async function AdminMenuPage(props: { searchParams: Promise<{ edi
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Price Options (Optional, comma-separated e.g. 100, 150, 200)</label>
+                <input 
+                  type="text" 
+                  name="price_options" 
+                  defaultValue={editPrices ? editPrices.join(', ') : ''} 
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all" 
+                  placeholder="e.g. 100, 150, 200" 
+                />
               </div>
 
               <div>

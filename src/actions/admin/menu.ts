@@ -23,7 +23,15 @@ export const createMenuItem = withAuth(
       if (formData.get('meal_breakfast') === 'on') selectedMeals.push('breakfast');
       if (formData.get('meal_lunch') === 'on') selectedMeals.push('lunch');
       if (formData.get('meal_dinner') === 'on') selectedMeals.push('dinner');
-      const description = `${realDescription}||meals:${selectedMeals.join(',')}`;
+
+      const price_options_str = formData.get('price_options') as string || '';
+      const cleanPrices = price_options_str.split(',')
+        .map(s => s.trim())
+        .map(Number)
+        .filter(n => !isNaN(n) && n > 0);
+      const priceSuffix = cleanPrices.length > 0 ? `||prices:${cleanPrices.join(',')}` : '';
+      
+      const description = `${realDescription}||meals:${selectedMeals.join(',')}${priceSuffix}`;
 
       const supabase = await createAdminClient();
 
@@ -90,7 +98,15 @@ export const updateMenuItem = withAuth(
       if (formData.get('meal_breakfast') === 'on') selectedMeals.push('breakfast');
       if (formData.get('meal_lunch') === 'on') selectedMeals.push('lunch');
       if (formData.get('meal_dinner') === 'on') selectedMeals.push('dinner');
-      const description = `${realDescription}||meals:${selectedMeals.join(',')}`;
+
+      const price_options_str = formData.get('price_options') as string || '';
+      const cleanPrices = price_options_str.split(',')
+        .map(s => s.trim())
+        .map(Number)
+        .filter(n => !isNaN(n) && n > 0);
+      const priceSuffix = cleanPrices.length > 0 ? `||prices:${cleanPrices.join(',')}` : '';
+
+      const description = `${realDescription}||meals:${selectedMeals.join(',')}${priceSuffix}`;
 
       const supabase = await createAdminClient();
 

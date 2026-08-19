@@ -78,7 +78,7 @@ export async function createOrder(data: CreateOrderData) {
     const menuItemIds = data.items.map(i => i.menu_item_id);
     const { data: menuItems, error: menuError } = await supabase
       .from('menu_items')
-      .select('id, base_price')
+      .select('id, base_price, description')
       .in('id', menuItemIds)
       .eq('is_active', true);
 
@@ -87,23 +87,46 @@ export async function createOrder(data: CreateOrderData) {
       return { success: false, error: 'One or more items are unavailable or prices could not be verified' };
     }
 
-    // Map fetched prices for secure calculation
+    const parsePriceOptions = (desc: string | null | undefined): number[] => {
+      if (!desc) return [];
+      const parts = desc.split('||prices:');
+      if (parts.length < 2) return [];
+      const pricePart = parts[1].split('||')[0];
+      return pricePart.split(',').map(Number).filter(n => !isNaN(n));
+    };
+
+    // Map fetched details for secure calculation
     const priceMap = new Map(menuItems.map(item => [item.id, item.base_price]));
+    const descMap = new Map(menuItems.map(item => [item.id, item.description]));
 
     let subtotal = 0;
-    const secureOrderItems = data.items.map(item => {
-      const actualUnitPrice = Number(priceMap.get(item.menu_item_id) || 0);
-      const totalItemPrice = actualUnitPrice * Number(item.quantity);
-      subtotal += totalItemPrice;
+    const secureOrderItems = [];
 
-      return {
+    for (const item of data.items) {
+      const basePrice = Number(priceMap.get(item.menu_item_id) || 0);
+      const desc = descMap.get(item.menu_item_id);
+      const allowedPrices = parsePriceOptions(desc);
+      
+      let finalPrice = basePrice;
+      if (item.unit_price && allowedPrices.length > 0) {
+        if (allowedPrices.includes(Number(item.unit_price))) {
+          finalPrice = Number(item.unit_price);
+        } else {
+          return { success: false, error: 'Invalid item price option selected' };
+        }
+      }
+      
+      const totalItemPrice = finalPrice * Number(item.quantity);
+      subtotal += totalItemPrice;
+      
+      secureOrderItems.push({
         menu_item_id: item.menu_item_id,
         quantity: item.quantity,
-        unit_price: actualUnitPrice,
+        unit_price: finalPrice,
         total_price: totalItemPrice,
         notes: item.notes || ''
-      };
-    });
+      });
+    }
 
     let delivery_fee = 0;
     let zone_id = null;

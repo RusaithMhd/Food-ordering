@@ -20,6 +20,7 @@ interface MenuItem {
   name: string;
   base_price: number;
   image_url?: string | null;
+  description?: string | null;
 }
 
 interface Profile {
@@ -43,12 +44,21 @@ export function AdminCreateOrderDialog({ menuItems, profiles }: AdminCreateOrder
   const [location, setLocation] = useState('');
   const [note, setNote] = useState('');
   
-  // Order items state
-  const [orderItems, setOrderItems] = useState<{ menu_item_id: string; quantity: number }[]>([]);
+  // Order items state (holds unique item + selected price variant combinations)
+  const [orderItems, setOrderItems] = useState<{ menu_item_id: string; quantity: number; unit_price: number }[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Helper to parse price options
+  const parsePriceOptions = (desc: string | null | undefined): number[] => {
+    if (!desc) return [];
+    const parts = desc.split('||prices:');
+    if (parts.length < 2) return [];
+    const pricePart = parts[1].split('||')[0];
+    return pricePart.split(',').map(Number).filter(n => !isNaN(n));
+  };
 
   // Filter menu items by search query
   const filteredMenuItems = menuItems.filter(item => 
@@ -56,30 +66,35 @@ export function AdminCreateOrderDialog({ menuItems, profiles }: AdminCreateOrder
   );
 
   // Add menu item to order
-  const handleAddItem = (itemId: string) => {
+  const handleAddItem = (itemId: string, customPrice?: number) => {
+    const item = menuItems.find(x => x.id === itemId);
+    if (!item) return;
+
+    const finalPrice = customPrice !== undefined ? customPrice : item.base_price;
+
     setOrderItems(prev => {
-      const existing = prev.find(i => i.menu_item_id === itemId);
+      const existing = prev.find(i => i.menu_item_id === itemId && i.unit_price === finalPrice);
       if (existing) {
-        return prev.map(i => i.menu_item_id === itemId ? { ...i, quantity: i.quantity + 1 } : i);
+        return prev.map(i => (i.menu_item_id === itemId && i.unit_price === finalPrice) ? { ...i, quantity: i.quantity + 1 } : i);
       }
-      return [...prev, { menu_item_id: itemId, quantity: 1 }];
+      return [...prev, { menu_item_id: itemId, quantity: 1, unit_price: finalPrice }];
     });
   };
 
   // Adjust item quantity
-  const handleAdjustQuantity = (itemId: string, amount: number) => {
+  const handleAdjustQuantity = (itemId: string, price: number, amount: number) => {
     setOrderItems(prev => prev.map(i => {
-      if (i.menu_item_id === itemId) {
+      if (i.menu_item_id === itemId && i.unit_price === price) {
         const newQty = i.quantity + amount;
         return newQty > 0 ? { ...i, quantity: newQty } : null;
       }
       return i;
-    }).filter(Boolean) as { menu_item_id: string; quantity: number }[]);
+    }).filter(Boolean) as { menu_item_id: string; quantity: number; unit_price: number }[]);
   };
 
   // Remove item
-  const handleRemoveItem = (itemId: string) => {
-    setOrderItems(prev => prev.filter(i => i.menu_item_id !== itemId));
+  const handleRemoveItem = (itemId: string, price: number) => {
+    setOrderItems(prev => prev.filter(i => !(i.menu_item_id === itemId && i.unit_price === price)));
   };
 
   // Handle profile selection
@@ -99,8 +114,7 @@ export function AdminCreateOrderDialog({ menuItems, profiles }: AdminCreateOrder
 
   // Calculate subtotal
   const subtotal = orderItems.reduce((sum, item) => {
-    const m = menuItems.find(x => x.id === item.menu_item_id);
-    return sum + (m ? m.base_price * item.quantity : 0);
+    return sum + (item.unit_price * item.quantity);
   }, 0);
   
   const deliveryFee = 2.50;
@@ -127,7 +141,11 @@ export function AdminCreateOrderDialog({ menuItems, profiles }: AdminCreateOrder
         phone,
         location,
         customer_note: note,
-        items: orderItems
+        items: orderItems.map(i => ({
+          menu_item_id: i.menu_item_id,
+          quantity: i.quantity,
+          unit_price: i.unit_price
+        }))
       });
 
       if (result.success) {
@@ -266,7 +284,7 @@ export function AdminCreateOrderDialog({ menuItems, profiles }: AdminCreateOrder
                         const m = menuItems.find(x => x.id === item.menu_item_id);
                         if (!m) return null;
                         return (
-                          <div key={item.menu_item_id} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100 gap-3">
+                          <div key={`${item.menu_item_id}-${item.unit_price}`} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100 gap-3">
                             <div className="flex items-center space-x-2.5 min-w-0 flex-1">
                               {m.image_url ? (
                                 <img 
@@ -281,14 +299,14 @@ export function AdminCreateOrderDialog({ menuItems, profiles }: AdminCreateOrder
                               )}
                               <div className="min-w-0 flex-1">
                                 <span className="font-semibold text-xs text-slate-800 block truncate">{m.name}</span>
-                                <span className="text-[10px] text-slate-400 block font-bold">LKR {m.base_price.toFixed(2)} each</span>
+                                <span className="text-[10px] text-indigo-600 block font-extrabold">LKR {item.unit_price.toFixed(2)} each</span>
                               </div>
                             </div>
                             <div className="flex items-center space-x-2">
                               <div className="flex items-center bg-white border border-slate-200 rounded-lg p-0.5 shadow-sm">
                                 <button 
                                   type="button" 
-                                  onClick={() => handleAdjustQuantity(item.menu_item_id, -1)}
+                                  onClick={() => handleAdjustQuantity(item.menu_item_id, item.unit_price, -1)}
                                   className="p-1 hover:bg-slate-50 rounded text-slate-500"
                                 >
                                   <Minus className="w-3.5 h-3.5" />
@@ -296,7 +314,7 @@ export function AdminCreateOrderDialog({ menuItems, profiles }: AdminCreateOrder
                                 <span className="px-2.5 font-bold text-xs text-slate-800">{item.quantity}</span>
                                 <button 
                                   type="button" 
-                                  onClick={() => handleAdjustQuantity(item.menu_item_id, 1)}
+                                  onClick={() => handleAdjustQuantity(item.menu_item_id, item.unit_price, 1)}
                                   className="p-1 hover:bg-slate-50 rounded text-slate-500"
                                 >
                                   <Plus className="w-3.5 h-3.5" />
@@ -304,7 +322,7 @@ export function AdminCreateOrderDialog({ menuItems, profiles }: AdminCreateOrder
                               </div>
                               <button 
                                 type="button" 
-                                onClick={() => handleRemoveItem(item.menu_item_id)}
+                                onClick={() => handleRemoveItem(item.menu_item_id, item.unit_price)}
                                 className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -376,33 +394,64 @@ export function AdminCreateOrderDialog({ menuItems, profiles }: AdminCreateOrder
 
                 {/* Menu items listing */}
                 <div className="flex-1 overflow-y-auto space-y-2 pr-1 max-h-[220px] md:max-h-[500px]">
-                  {filteredMenuItems.map(item => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => handleAddItem(item.id)}
-                      className="w-full text-left p-3.5 bg-white rounded-2xl border border-slate-100 hover:border-indigo-300 hover:bg-indigo-50/20 transition-all flex items-center justify-between shadow-sm group active:scale-[0.99] gap-3"
-                    >
-                      <div className="flex items-center space-x-3 min-w-0 flex-1">
-                        {item.image_url ? (
-                          <img 
-                            src={item.image_url} 
-                            alt={item.name} 
-                            className="w-12 h-12 object-cover rounded-xl border border-slate-100 group-hover:scale-105 transition-transform duration-300 shrink-0"
-                          />
-                        ) : (
-                          <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 font-bold shrink-0">
-                            <UtensilsCrossed className="w-5 h-5" />
+                  {filteredMenuItems.map(item => {
+                    const priceOptions = parsePriceOptions(item.description);
+                    return (
+                      <div
+                        key={item.id}
+                        className="w-full p-3.5 bg-white rounded-2xl border border-slate-100 flex flex-col shadow-sm group gap-3"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center space-x-3 min-w-0 flex-1">
+                            {item.image_url ? (
+                              <img 
+                                src={item.image_url} 
+                                alt={item.name} 
+                                className="w-12 h-12 object-cover rounded-xl border border-slate-100 group-hover:scale-105 transition-transform duration-300 shrink-0"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 font-bold shrink-0">
+                                <UtensilsCrossed className="w-5 h-5" />
+                              </div>
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <span className="font-bold text-xs text-slate-800 block truncate">{item.name}</span>
+                              <span className="text-[10px] text-slate-400 font-bold block mt-0.5">Base: LKR {item.base_price.toFixed(2)}</span>
+                            </div>
+                          </div>
+
+                          {priceOptions.length === 0 && (
+                            <button
+                              type="button"
+                              onClick={() => handleAddItem(item.id)}
+                              className="w-8 h-8 rounded-xl bg-indigo-50 hover:bg-indigo-600 hover:text-white text-indigo-600 transition-all flex items-center justify-center shrink-0"
+                            >
+                              <Plus className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Custom Price Pills Selection */}
+                        {priceOptions.length > 0 && (
+                          <div className="border-t border-slate-50 pt-2.5 mt-0.5">
+                            <span className="block text-[9px] font-bold text-slate-400 uppercase mb-1.5">Select Price Option:</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {priceOptions.map(price => (
+                                <button
+                                  key={price}
+                                  type="button"
+                                  onClick={() => handleAddItem(item.id, price)}
+                                  className="px-2.5 py-1 bg-indigo-50/50 hover:bg-indigo-600 hover:text-white text-indigo-700 text-[10px] font-extrabold rounded-xl border border-indigo-100/50 hover:border-indigo-600 transition-all"
+                                >
+                                  LKR {price.toFixed(0)}
+                                </button>
+                              ))}
+                            </div>
                           </div>
                         )}
-                        <div className="min-w-0 flex-1">
-                          <span className="font-bold text-xs text-slate-800 block group-hover:text-indigo-900 truncate">{item.name}</span>
-                          <span className="text-[10px] text-slate-400 font-bold block mt-0.5">LKR {item.base_price.toFixed(2)}</span>
-                        </div>
                       </div>
-                      <Plus className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 shrink-0" />
-                    </button>
-                  ))}
+                    );
+                  })}
                   {filteredMenuItems.length === 0 && (
                     <p className="text-xs text-slate-400 font-semibold italic text-center py-6">No matching menu items found.</p>
                   )}
