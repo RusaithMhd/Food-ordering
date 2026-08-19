@@ -19,6 +19,7 @@ interface MenuItem {
   id: string;
   name: string;
   base_price: number;
+  image_url?: string | null;
 }
 
 interface Profile {
@@ -265,10 +266,23 @@ export function AdminCreateOrderDialog({ menuItems, profiles }: AdminCreateOrder
                         const m = menuItems.find(x => x.id === item.menu_item_id);
                         if (!m) return null;
                         return (
-                          <div key={item.menu_item_id} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
-                            <div className="flex-1 min-w-0 pr-2">
-                              <span className="font-semibold text-xs text-slate-800 block truncate">{m.name}</span>
-                              <span className="text-[10px] text-slate-400 block font-bold">LKR {m.base_price.toFixed(2)} each</span>
+                          <div key={item.menu_item_id} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100 gap-3">
+                            <div className="flex items-center space-x-2.5 min-w-0 flex-1">
+                              {m.image_url ? (
+                                <img 
+                                  src={m.image_url} 
+                                  alt={m.name} 
+                                  className="w-8 h-8 object-cover rounded-lg border border-slate-200 shrink-0"
+                                />
+                              ) : (
+                                <div className="w-8 h-8 bg-slate-200 rounded-lg flex items-center justify-center text-slate-400 font-bold shrink-0">
+                                  <UtensilsCrossed className="w-3.5 h-3.5" />
+                                </div>
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <span className="font-semibold text-xs text-slate-800 block truncate">{m.name}</span>
+                                <span className="text-[10px] text-slate-400 block font-bold">LKR {m.base_price.toFixed(2)} each</span>
+                              </div>
                             </div>
                             <div className="flex items-center space-x-2">
                               <div className="flex items-center bg-white border border-slate-200 rounded-lg p-0.5 shadow-sm">
@@ -367,11 +381,24 @@ export function AdminCreateOrderDialog({ menuItems, profiles }: AdminCreateOrder
                       key={item.id}
                       type="button"
                       onClick={() => handleAddItem(item.id)}
-                      className="w-full text-left p-3 bg-white rounded-2xl border border-slate-100 hover:border-indigo-300 hover:bg-indigo-50/20 transition-all flex justify-between items-center shadow-sm group active:scale-[0.99]"
+                      className="w-full text-left p-3.5 bg-white rounded-2xl border border-slate-100 hover:border-indigo-300 hover:bg-indigo-50/20 transition-all flex items-center justify-between shadow-sm group active:scale-[0.99] gap-3"
                     >
-                      <div className="min-w-0 pr-2">
-                        <span className="font-bold text-xs text-slate-800 block group-hover:text-indigo-900 truncate">{item.name}</span>
-                        <span className="text-[10px] text-slate-400 font-bold block mt-0.5">LKR {item.base_price.toFixed(2)}</span>
+                      <div className="flex items-center space-x-3 min-w-0 flex-1">
+                        {item.image_url ? (
+                          <img 
+                            src={item.image_url} 
+                            alt={item.name} 
+                            className="w-12 h-12 object-cover rounded-xl border border-slate-100 group-hover:scale-105 transition-transform duration-300 shrink-0"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 font-bold shrink-0">
+                            <UtensilsCrossed className="w-5 h-5" />
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <span className="font-bold text-xs text-slate-800 block group-hover:text-indigo-900 truncate">{item.name}</span>
+                          <span className="text-[10px] text-slate-400 font-bold block mt-0.5">LKR {item.base_price.toFixed(2)}</span>
+                        </div>
                       </div>
                       <Plus className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 shrink-0" />
                     </button>
