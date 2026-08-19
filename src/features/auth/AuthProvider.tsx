@@ -26,16 +26,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (firebaseUser) {
         // Sync session with the server and map to Supabase
-        const token = await firebaseUser.getIdToken();
-        const res = await verifySession(token);
-        if (res.success && res.role) {
-          setUserRole(res.role);
-        } else {
+        try {
+          const token = await firebaseUser.getIdToken();
+          const res = await verifySession(token);
+          if (res.success) {
+            setUserRole(res.role || null);
+          } else {
+            console.error('Session verification failed on server');
+            setUserRole(null);
+            await auth.signOut();
+          }
+        } catch (error) {
+          console.error('Exception during session verification:', error);
           setUserRole(null);
+          await auth.signOut();
         }
       } else {
         // Clear session
-        await verifySession(null);
+        try {
+          await verifySession(null);
+        } catch (e) {
+          console.error('Failed to clear session on server');
+        }
         setUserRole(null);
       }
       

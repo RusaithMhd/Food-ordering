@@ -7,8 +7,12 @@ interface LogPayload {
 class Logger {
   private log(level: LogLevel, message: string, payload?: LogPayload) {
     const timestamp = new Date().toISOString();
-    const data = payload ? JSON.stringify(payload) : '';
-    
+    let data = '';
+    try {
+      data = payload ? JSON.stringify(payload) : '';
+    } catch (e) {
+      data = '[Circular or Non-Stringifiable Payload]';
+    }
     // In production, you would send this to a service like Datadog, Sentry, etc.
     if (process.env.NODE_ENV === 'production') {
       // Send to remote logger

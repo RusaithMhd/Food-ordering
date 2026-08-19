@@ -24,6 +24,9 @@ export default function LoginPage() {
       } else {
         router.push('/');
       }
+    } else if (!user && !loading) {
+      // Reset button state if verification fails and user is signed out
+      setIsLoading(false);
     }
   }, [user, userRole, loading, router]);
 

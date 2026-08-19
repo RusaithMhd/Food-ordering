@@ -51,7 +51,7 @@ export async function verifySession(idToken: string | null) {
       .from('user_roles')
       .select('roles(name)')
       .eq('user_id', decodedToken.uid)
-      .single();
+      .maybeSingle();
       
     if (roleData && roleData.roles) {
       role = (roleData.roles as any).name;

@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/browser';
 import { MenuItem, Category } from '@/types/menu';
 import { Branch } from '@/services/hotel.service';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Plus, MapPin, Truck, UtensilsCrossed, Sparkles } from 'lucide-react';
+import { ShoppingCart, Plus, MapPin, Truck, UtensilsCrossed, Sparkles, Coffee, Moon, Clock, Flame, Star, ShieldCheck, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/features/auth/AuthProvider';
 import Link from 'next/link';
 
@@ -21,6 +21,14 @@ export default function CustomerMenu() {
   const [availableBranches, setAvailableBranches] = useState<Branch[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [selectedMealType, setSelectedMealType] = useState<string | null>(null);
+  
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 18) return "Good afternoon";
+    return "Good evening";
+  };
 
   // Fetch branches if no branch is selected (Landing Page mode)
   useEffect(() => {
@@ -49,8 +57,19 @@ export default function CustomerMenu() {
         .order('sort_order', { ascending: true });
         
       if (cats && cats.length > 0) {
-        setCategories(cats);
-        setActiveCategory(cats[0].id);
+        // If a meal type was selected, filter categories that might match it.
+        // E.g., if they selected "Breakfast", only show categories with "Breakfast" in the name.
+        // If no categories match (e.g. they don't have a Breakfast category), just show all categories.
+        let filteredCats = cats;
+        if (selectedMealType) {
+          const matched = cats.filter(c => c.name.toLowerCase().includes(selectedMealType.toLowerCase()));
+          if (matched.length > 0) {
+            filteredCats = matched;
+          }
+        }
+        
+        setCategories(filteredCats);
+        setActiveCategory(filteredCats[0].id);
       }
 
       const { data: items } = await supabase
@@ -67,7 +86,7 @@ export default function CustomerMenu() {
     };
 
     fetchMenu();
-  }, [branchId]);
+  }, [branchId, selectedMealType]);
 
   if (isContextLoading) {
     return (
@@ -85,67 +104,199 @@ export default function CustomerMenu() {
   // -------------------------------------------------------------
   if (!branchId) {
     return (
-      <div className="min-h-screen flex flex-col relative overflow-hidden bg-white">
-        {/* Header removed in favor of global Navbar */}
-
-        {/* Hero Section */}
-        <div className="flex-1 flex flex-col justify-center items-center px-6 relative pt-20 pb-12 text-center">
-          <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-gradient-to-br from-amber-100/50 to-orange-100/50 blur-3xl" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-gradient-to-br from-emerald-100/40 to-teal-100/40 blur-3xl" />
+      <div className="min-h-screen flex flex-col relative overflow-hidden bg-slate-50">
+        
+        {/* Animated Background Gradients */}
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-gradient-to-br from-amber-200/40 to-orange-200/40 blur-3xl animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-gradient-to-br from-indigo-200/40 to-purple-200/40 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        
+        {/* Header / Quote Section */}
+        <div className="w-full max-w-5xl mx-auto pt-16 pb-8 px-6 relative z-10 text-center flex flex-col items-center">
           
-          <div className="relative z-10 max-w-2xl mx-auto space-y-6">
-            <div className="inline-flex items-center px-4 py-2 bg-amber-50 rounded-full text-amber-600 font-semibold text-sm shadow-sm border border-amber-100 mb-2">
-              <Sparkles className="h-4 w-4 mr-2" />
-              Premium Food Delivery
-            </div>
-            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 leading-[1.1]">
-              Cravings satisfied,<br/>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-600">
-                straight to your door.
-              </span>
-            </h1>
-            <p className="text-lg md:text-xl text-slate-500 max-w-xl mx-auto font-medium">
-              Select your location below to explore our curated menu of delicious meals.
+          <div className="inline-flex items-center px-4 py-2 bg-white rounded-full text-slate-700 font-semibold text-sm shadow-sm border border-slate-200 mb-6 animate-in slide-in-from-top-4 fade-in duration-700">
+            <Sparkles className="h-4 w-4 mr-2 text-amber-500" />
+            {getGreeting()}, {user?.displayName?.split(' ')[0] || 'Guest'}!
+          </div>
+
+          <h1 className="text-4xl md:text-6xl font-black tracking-tight text-slate-900 leading-[1.1] mb-6 animate-in zoom-in fade-in duration-700 delay-100">
+            What are you craving <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-rose-500">
+              right now?
+            </span>
+          </h1>
+          
+          {/* Daily Quote Card */}
+          <div className="bg-white/60 backdrop-blur-md p-6 rounded-3xl border border-white/50 shadow-lg max-w-2xl mx-auto animate-in slide-in-from-bottom-8 fade-in duration-700 delay-200 relative overflow-hidden group">
+            <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-amber-400 to-rose-400" />
+            <p className="text-lg md:text-xl font-medium text-slate-700 italic relative z-10">
+              "{import('@/utils/quotes').then(m => m.getDailyQuote()).catch(() => "Good food is the foundation of genuine happiness.")}"
             </p>
           </div>
         </div>
 
-        {/* Branch Selection Section */}
-        <div className="bg-[#F8F9FA] flex-1 w-full border-t border-slate-100 py-16 px-6 relative z-10">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-2xl font-bold text-slate-900 mb-8 flex items-center">
-              <MapPin className="mr-2 h-6 w-6 text-slate-400" />
-              Available Menus
-            </h2>
-            
-            {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[1, 2].map(i => (
-                  <div key={i} className="h-32 bg-white rounded-3xl animate-pulse border border-slate-100" />
-                ))}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {availableBranches.map(b => (
-                  <button
-                    key={b.id}
-                    onClick={() => setContext(b.id)}
-                    className="group bg-white p-6 rounded-3xl shadow-sm hover:shadow-xl hover:shadow-slate-200/50 border border-slate-200 text-left transition-all duration-300 transform hover:-translate-y-1 focus:ring-4 focus:ring-amber-500/20 outline-none"
-                  >
-                    <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-amber-50 transition-colors border border-slate-100">
-                      <UtensilsCrossed className="h-6 w-6 text-slate-400 group-hover:text-amber-500 transition-colors" />
+        {/* Meal Selection Cards */}
+        <div className="flex-1 w-full max-w-6xl mx-auto px-6 pb-20 relative z-10 flex flex-col justify-center">
+          
+          {isLoading ? (
+            <div className="flex justify-center items-center h-48">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              
+              {/* Breakfast Card */}
+              <button
+                onClick={() => {
+                  setSelectedMealType('Breakfast');
+                  if (availableBranches.length > 0) {
+                    setContext(availableBranches[0].id);
+                  }
+                }}
+                className="group relative h-48 md:h-64 bg-gradient-to-br from-amber-50 to-orange-50 rounded-[2rem] p-8 shadow-sm hover:shadow-2xl border border-amber-100/50 hover:border-amber-300 transition-all duration-500 transform hover:-translate-y-2 overflow-hidden text-left outline-none focus:ring-4 focus:ring-amber-500/20"
+              >
+                <div className="absolute right-[-20%] top-[-20%] w-48 h-48 bg-amber-200/50 rounded-full blur-3xl group-hover:bg-amber-300/60 transition-colors duration-500" />
+                <div className="relative z-10 flex flex-col h-full justify-between">
+                  <div className="flex justify-between items-start">
+                    <div className="w-14 h-14 bg-white/80 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-110 group-hover:rotate-6 transition-transform duration-500">
+                      <Coffee className="w-7 h-7 text-amber-500" />
                     </div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-1">{b.name}</h3>
-                    <p className="text-sm text-slate-500 font-medium">Delivery available • 30-45 min</p>
-                  </button>
-                ))}
-                {availableBranches.length === 0 && !isLoading && (
-                  <div className="col-span-full p-8 text-center bg-white rounded-3xl border border-slate-100 border-dashed">
-                    <p className="text-slate-500 font-medium">No menus are currently available.</p>
+                    <div className="flex items-center bg-amber-100/50 text-amber-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider backdrop-blur-sm">
+                      <Clock className="w-3 h-3 mr-1" /> 7am - 11am
+                    </div>
                   </div>
-                )}
+                  <div>
+                    <h2 className="text-3xl font-black text-slate-800 mb-1 group-hover:text-amber-700 transition-colors">Breakfast</h2>
+                    <p className="text-amber-700/70 font-medium mb-3">Fresh pastries & hot coffee</p>
+                    <div className="flex items-center text-amber-600 font-bold text-sm group-hover:translate-x-1 transition-transform">
+                      Explore Menu <ChevronRight className="w-4 h-4 ml-1" />
+                    </div>
+                  </div>
+                </div>
+              </button>
+
+              {/* Lunch Card */}
+              <button
+                onClick={() => {
+                  setSelectedMealType('Lunch');
+                  if (availableBranches.length > 0) {
+                    setContext(availableBranches[0].id);
+                  }
+                }}
+                className="group relative h-48 md:h-64 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-[2rem] p-8 shadow-sm hover:shadow-2xl border border-emerald-100/50 hover:border-emerald-300 transition-all duration-500 transform hover:-translate-y-2 overflow-hidden text-left outline-none focus:ring-4 focus:ring-emerald-500/20"
+              >
+                <div className="absolute right-[-20%] top-[-20%] w-48 h-48 bg-emerald-200/50 rounded-full blur-3xl group-hover:bg-emerald-300/60 transition-colors duration-500" />
+                <div className="relative z-10 flex flex-col h-full justify-between">
+                  <div className="flex justify-between items-start">
+                    <div className="w-14 h-14 bg-white/80 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-110 group-hover:rotate-6 transition-transform duration-500">
+                      <UtensilsCrossed className="w-7 h-7 text-emerald-500" />
+                    </div>
+                    <div className="flex items-center bg-emerald-100/50 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider backdrop-blur-sm">
+                      <Clock className="w-3 h-3 mr-1" /> 11am - 4pm
+                    </div>
+                  </div>
+                  <div>
+                    <h2 className="text-3xl font-black text-slate-800 mb-1 group-hover:text-emerald-700 transition-colors">Lunch</h2>
+                    <p className="text-emerald-700/70 font-medium mb-3">Hearty midday meals</p>
+                    <div className="flex items-center text-emerald-600 font-bold text-sm group-hover:translate-x-1 transition-transform">
+                      Explore Menu <ChevronRight className="w-4 h-4 ml-1" />
+                    </div>
+                  </div>
+                </div>
+              </button>
+
+              {/* Dinner Card */}
+              <button
+                onClick={() => {
+                  setSelectedMealType('Dinner');
+                  if (availableBranches.length > 0) {
+                    setContext(availableBranches[0].id);
+                  }
+                }}
+                className="group relative h-48 md:h-64 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-[2rem] p-8 shadow-sm hover:shadow-2xl border border-indigo-100/50 hover:border-indigo-300 transition-all duration-500 transform hover:-translate-y-2 overflow-hidden text-left outline-none focus:ring-4 focus:ring-indigo-500/20"
+              >
+                <div className="absolute right-[-20%] top-[-20%] w-48 h-48 bg-indigo-200/50 rounded-full blur-3xl group-hover:bg-indigo-300/60 transition-colors duration-500" />
+                <div className="relative z-10 flex flex-col h-full justify-between">
+                  <div className="flex justify-between items-start">
+                    <div className="w-14 h-14 bg-white/80 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-110 group-hover:rotate-6 transition-transform duration-500">
+                      <Moon className="w-7 h-7 text-indigo-500" />
+                    </div>
+                    <div className="flex items-center bg-indigo-100/50 text-indigo-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider backdrop-blur-sm">
+                      <Clock className="w-3 h-3 mr-1" /> 4pm - 11pm
+                    </div>
+                  </div>
+                  <div>
+                    <h2 className="text-3xl font-black text-slate-800 mb-1 group-hover:text-indigo-700 transition-colors">Dinner</h2>
+                    <p className="text-indigo-700/70 font-medium mb-3">The perfect evening</p>
+                    <div className="flex items-center text-indigo-600 font-bold text-sm group-hover:translate-x-1 transition-transform">
+                      Explore Menu <ChevronRight className="w-4 h-4 ml-1" />
+                    </div>
+                  </div>
+                </div>
+              </button>
+
+            </div>
+          )}
+          
+          {availableBranches.length === 0 && !isLoading && (
+            <div className="mt-8 p-8 text-center bg-white rounded-3xl border border-slate-100 border-dashed">
+              <p className="text-slate-500 font-medium">Our kitchens are currently closed.</p>
+            </div>
+          )}
+
+          {/* New Sections */}
+          <div className="mt-16 w-full animate-in slide-in-from-bottom-8 fade-in duration-700 delay-300">
+            
+            {/* Chef's Highlights Placeholder */}
+            <div className="mb-16">
+              <div className="flex items-center justify-between mb-6 px-2">
+                <h3 className="text-2xl font-black text-slate-900 flex items-center">
+                  <Flame className="w-6 h-6 text-orange-500 mr-2" />
+                  Popular Right Now
+                </h3>
               </div>
-            )}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 hover:shadow-lg transition-all group overflow-hidden relative">
+                    <div className="absolute top-2 right-2 bg-white/80 backdrop-blur-sm px-2 py-1 rounded-full flex items-center z-10 text-xs font-bold text-slate-700 shadow-sm">
+                      <Star className="w-3 h-3 text-amber-500 mr-1 fill-amber-500" /> 4.9
+                    </div>
+                    <div className="aspect-square bg-slate-100 rounded-xl mb-3 overflow-hidden">
+                      <div className="w-full h-full bg-gradient-to-tr from-slate-200 to-slate-100 group-hover:scale-105 transition-transform duration-500" />
+                    </div>
+                    <div className="h-4 bg-slate-100 rounded w-3/4 mb-2"></div>
+                    <div className="h-3 bg-slate-50 rounded w-1/2"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Guarantees Section */}
+            <div className="bg-white/80 backdrop-blur-lg rounded-[2rem] p-8 md:p-12 border border-slate-200/60 shadow-xl shadow-slate-200/20">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                <div className="flex flex-col items-center">
+                  <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mb-4 text-amber-600">
+                    <Clock className="w-8 h-8" />
+                  </div>
+                  <h4 className="text-lg font-bold text-slate-900 mb-1">Lightning Fast</h4>
+                  <p className="text-slate-500 text-sm">Delivery in under 30 minutes, directly to your door.</p>
+                </div>
+                <div className="flex flex-col items-center">
+                  <div className="w-16 h-16 bg-rose-100 rounded-2xl flex items-center justify-center mb-4 text-rose-600">
+                    <Flame className="w-8 h-8" />
+                  </div>
+                  <h4 className="text-lg font-bold text-slate-900 mb-1">Always Hot</h4>
+                  <p className="text-slate-500 text-sm">Special thermal packaging ensures your food arrives fresh.</p>
+                </div>
+                <div className="flex flex-col items-center">
+                  <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mb-4 text-emerald-600">
+                    <ShieldCheck className="w-8 h-8" />
+                  </div>
+                  <h4 className="text-lg font-bold text-slate-900 mb-1">Premium Quality</h4>
+                  <p className="text-slate-500 text-sm">Made with 100% locally sourced, premium ingredients.</p>
+                </div>
+              </div>
+            </div>
+            
           </div>
         </div>
       </div>
@@ -171,7 +322,7 @@ export default function CustomerMenu() {
             </div>
             <div>
               <h1 className="font-bold text-xl tracking-tight text-slate-900 leading-none mb-1">
-                Our Menu
+                {selectedMealType ? `${selectedMealType} Menu` : 'Our Menu'}
               </h1>
               <p className="text-sm font-medium text-slate-500 leading-none">Delivering to you</p>
             </div>
