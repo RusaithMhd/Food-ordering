@@ -16,6 +16,9 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { OrderStatusSelect } from './orders/OrderStatusSelect';
+import { updateKitchenClosingTimes } from '@/actions/admin/branches';
+import { parseClosingTimes } from '@/utils/closingTimes';
+import { Button } from '@/components/ui/button';
 
 export const revalidate = 0; // Disable caching so it's always live
 
@@ -67,6 +70,10 @@ async function getDashboardData() {
     .order('placed_at', { ascending: false })
     .limit(5);
 
+  // 5. Fetch default branch for closing times settings
+  const { data: branches } = await supabase.from('branches').select('id, name, timezone').limit(1);
+  const branch = branches?.[0] || null;
+
   return {
     ordersCount: ordersCount || 0,
     menuItemsCount: menuItemsCount || 0,
@@ -74,7 +81,8 @@ async function getDashboardData() {
     staffCount: staffCount || 0,
     lifetimeRevenue,
     weeklyOrders: weeklyOrders || [],
-    recentOrders: recentOrders || []
+    recentOrders: recentOrders || [],
+    branch
   };
 }
 
@@ -86,7 +94,8 @@ export default async function AdminDashboardPage() {
     staffCount,
     lifetimeRevenue,
     weeklyOrders,
-    recentOrders
+    recentOrders,
+    branch
   } = await getDashboardData();
 
   // Process chart data for the last 7 days
@@ -269,38 +278,93 @@ export default async function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Quick Actions Panel */}
-        <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200 relative overflow-hidden flex flex-col justify-between">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-500" />
-          <div>
-            <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center">
-              Quick Actions
-            </h3>
-            <div className="space-y-3">
-              <Link href="/admin/orders" className="group flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/50 transition-all">
-                <div className="flex items-center space-x-3">
-                  <div className="bg-white p-2 rounded-lg shadow-sm group-hover:text-indigo-600 transition-colors">
-                    <ShoppingBag className="w-4 h-4" />
+        {/* Right Column: Quick Actions + Kitchen Closing Times */}
+        <div className="flex flex-col gap-6">
+          {/* Quick Actions Panel */}
+          <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200 relative overflow-hidden flex flex-col justify-between">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-500" />
+            <div>
+              <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center">
+                Quick Actions
+              </h3>
+              <div className="space-y-3">
+                <Link href="/admin/orders" className="group flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/50 transition-all">
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-white p-2 rounded-lg shadow-sm group-hover:text-indigo-600 transition-colors">
+                      <ShoppingBag className="w-4 h-4" />
+                    </div>
+                    <span className="font-semibold text-sm text-slate-700 group-hover:text-indigo-900 transition-colors">Manage Orders</span>
                   </div>
-                  <span className="font-semibold text-sm text-slate-700 group-hover:text-indigo-900 transition-colors">Manage Orders</span>
-                </div>
-                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 group-hover:-rotate-45 transition-all" />
-              </Link>
+                  <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 group-hover:-rotate-45 transition-all" />
+                </Link>
 
-              <Link href="/admin/menu" className="group flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/50 transition-all">
-                <div className="flex items-center space-x-3">
-                  <div className="bg-white p-2 rounded-lg shadow-sm group-hover:text-indigo-600 transition-colors">
-                    <UtensilsCrossed className="w-4 h-4" />
+                <Link href="/admin/menu" className="group flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/50 transition-all">
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-white p-2 rounded-lg shadow-sm group-hover:text-indigo-600 transition-colors">
+                      <UtensilsCrossed className="w-4 h-4" />
+                    </div>
+                    <span className="font-semibold text-sm text-slate-700 group-hover:text-indigo-900 transition-colors">Manage Menu</span>
                   </div>
-                  <span className="font-semibold text-sm text-slate-700 group-hover:text-indigo-900 transition-colors">Manage Menu</span>
-                </div>
-                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 group-hover:-rotate-45 transition-all" />
-              </Link>
+                  <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 group-hover:-rotate-45 transition-all" />
+                </Link>
+              </div>
+            </div>
+            <div className="text-xs text-slate-400 font-semibold mt-6 pt-4 border-t border-slate-100">
+              Need help? Contact support or consult documentation.
             </div>
           </div>
-          <div className="text-xs text-slate-400 font-semibold mt-6 pt-4 border-t border-slate-100">
-            Need help? Contact support or consult documentation.
-          </div>
+
+          {/* Kitchen Closing Times Panel */}
+          {branch && (
+            <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200 relative overflow-hidden flex flex-col justify-between">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-400 to-rose-500" />
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 mb-2 flex items-center">
+                  <Clock className="w-5 h-5 mr-2 text-amber-500" />
+                  Kitchen Closing Times
+                </h3>
+                <p className="text-slate-500 text-xs mb-5 font-medium">Set today's closing times. Resets automatically at end of day.</p>
+                
+                <form action={async (fd) => { 'use server'; await updateKitchenClosingTimes(fd); }} className="space-y-4">
+                  <input type="hidden" name="branch_id" value={branch.id} />
+                  
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Breakfast Close</label>
+                    <input 
+                      type="time" 
+                      name="closing_breakfast" 
+                      defaultValue={parseClosingTimes(branch.timezone).breakfast}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-semibold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Lunch Close</label>
+                    <input 
+                      type="time" 
+                      name="closing_lunch" 
+                      defaultValue={parseClosingTimes(branch.timezone).lunch}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-semibold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Dinner Close</label>
+                    <input 
+                      type="time" 
+                      name="closing_dinner" 
+                      defaultValue={parseClosingTimes(branch.timezone).dinner}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-semibold"
+                    />
+                  </div>
+
+                  <Button type="submit" className="w-full h-11 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs shadow-md shadow-slate-900/10 active:scale-[0.98] transition-all">
+                    Save Closing Times
+                  </Button>
+                </form>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

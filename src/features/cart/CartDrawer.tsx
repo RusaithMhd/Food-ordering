@@ -65,6 +65,7 @@ export function CartDrawer() {
     setError(null);
 
     try {
+      const mealType = typeof window !== 'undefined' ? localStorage.getItem('selectedMealType') || '' : '';
       const orderData = {
         manual_delivery_details: deliveryDetails,
         customer_id: user.uid,
@@ -73,7 +74,8 @@ export function CartDrawer() {
           quantity: i.quantity,
           unit_price: i.menuItem.base_price,
           notes: ''
-        }))
+        })),
+        meal_type: mealType
       };
 
       const result = await createOrder(orderData);

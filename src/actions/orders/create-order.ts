@@ -3,6 +3,7 @@
 import { createAdminClient } from '@/lib/supabase/server';
 import { getUser } from '@/lib/auth/getUser';
 import { logger } from '@/lib/logger';
+import { parseClosingTimes } from '@/utils/closingTimes';
 
 interface CreateOrderData {
   delivery_address_id?: string;
@@ -19,6 +20,7 @@ interface CreateOrderData {
     notes?: string;
   }[];
   customer_note?: string;
+  meal_type?: string;
 }
 
 export async function createOrder(data: CreateOrderData) {
@@ -30,6 +32,47 @@ export async function createOrder(data: CreateOrderData) {
 
   try {
     const supabase = await createAdminClient();
+
+    // Check if the user is an Admin/Manager/Kitchen staff to bypass closing times
+    const { data: userRoles } = await supabase
+      .from('user_roles')
+      .select('roles(name)')
+      .eq('user_id', user.uid);
+    const rolesList = userRoles?.map((ur: any) => ur.roles?.name) || [];
+    const isStaffOrAdmin = rolesList.includes('ADMIN') || rolesList.includes('MANAGER') || rolesList.includes('SUPER_ADMIN') || rolesList.includes('KITCHEN') || rolesList.includes('DELIVERY');
+
+    // 0. closing time check
+    if (!isStaffOrAdmin && data.meal_type) {
+      const { data: defaultBranch } = await supabase
+        .from('branches')
+        .select('id, timezone')
+        .limit(1)
+        .single();
+        
+      if (defaultBranch?.timezone && defaultBranch.timezone.includes('R:')) {
+        const closingTimes = parseClosingTimes(defaultBranch.timezone);
+        const mealKey = data.meal_type.toLowerCase() as 'breakfast' | 'lunch' | 'dinner';
+        const closingTimeStr = closingTimes[mealKey];
+        
+        if (closingTimeStr) {
+          const now = new Date();
+          const currentHour = now.getHours();
+          const currentMin = now.getMinutes();
+          const currentTimeNum = currentHour * 60 + currentMin;
+          
+          const [closeHour, closeMin] = closingTimeStr.split(':').map(Number);
+          const closeTimeNum = closeHour * 60 + closeMin;
+          
+          if (currentTimeNum > closeTimeNum) {
+            return { 
+              success: false, 
+              error: `The kitchen has closed for ${data.meal_type}. Please contact the shop for more details.` 
+            };
+          }
+        }
+      }
+    }
+
 
     // Securely fetch actual prices from the database
     const menuItemIds = data.items.map(i => i.menu_item_id);

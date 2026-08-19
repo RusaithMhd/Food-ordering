@@ -11,6 +11,7 @@ import { ShoppingCart, Plus, MapPin, Truck, UtensilsCrossed, Sparkles, Coffee, M
 import { useAuth } from '@/features/auth/AuthProvider';
 import Link from 'next/link';
 import { getDailyQuote } from '@/utils/quotes';
+import { parseClosingTimes } from '@/utils/closingTimes';
 
 export default function CustomerMenu() {
   const { branchId, branch, isLoading: isContextLoading, setContext } = useBranch();
@@ -23,6 +24,39 @@ export default function CustomerMenu() {
   const [isLoading, setIsLoading] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [selectedMealType, setSelectedMealType] = useState<string | null>(null);
+  const [isClosed, setIsClosed] = useState(false);
+
+  useEffect(() => {
+    if (!branch?.timezone || !selectedMealType) {
+      setIsClosed(false);
+      return;
+    }
+
+    const checkClosed = () => {
+      const closingTimes = parseClosingTimes(branch.timezone);
+      const mealKey = selectedMealType.toLowerCase() as 'breakfast' | 'lunch' | 'dinner';
+      const closingTimeStr = closingTimes[mealKey];
+      
+      if (!closingTimeStr) {
+        setIsClosed(false);
+        return;
+      }
+
+      const now = new Date();
+      const currentHour = now.getHours();
+      const currentMin = now.getMinutes();
+      const currentTimeNum = currentHour * 60 + currentMin;
+
+      const [closeHour, closeMin] = closingTimeStr.split(':').map(Number);
+      const closeTimeNum = closeHour * 60 + closeMin;
+
+      setIsClosed(currentTimeNum > closeTimeNum);
+    };
+
+    checkClosed();
+    const interval = setInterval(checkClosed, 10000); // Check every 10s
+    return () => clearInterval(interval);
+  }, [branch?.timezone, selectedMealType]);
   
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -141,6 +175,7 @@ export default function CustomerMenu() {
             <button
               onClick={() => {
                 setSelectedMealType('Breakfast');
+                localStorage.setItem('selectedMealType', 'Breakfast');
                 if (availableBranches.length > 0) {
                   setContext(availableBranches[0].id);
                 }
@@ -171,6 +206,7 @@ export default function CustomerMenu() {
             <button
               onClick={() => {
                 setSelectedMealType('Lunch');
+                localStorage.setItem('selectedMealType', 'Lunch');
                 if (availableBranches.length > 0) {
                   setContext(availableBranches[0].id);
                 }
@@ -201,6 +237,7 @@ export default function CustomerMenu() {
             <button
               onClick={() => {
                 setSelectedMealType('Dinner');
+                localStorage.setItem('selectedMealType', 'Dinner');
                 if (availableBranches.length > 0) {
                   setContext(availableBranches[0].id);
                 }
@@ -366,6 +403,16 @@ export default function CustomerMenu() {
 
       {/* Main Menu Grid */}
       <main className="p-5 max-w-4xl mx-auto mt-4">
+        {isClosed && (
+          <div className="mb-6 p-5 rounded-3xl bg-rose-50 border border-rose-100 text-rose-800 text-sm font-semibold flex items-start space-x-3.5 animate-in slide-in-from-top-4 duration-300">
+            <Clock className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-extrabold text-base">Kitchen Closed for {selectedMealType}</p>
+              <p className="text-rose-600 text-xs mt-1 font-medium">Please contact the shop directly to place your order or for more details.</p>
+            </div>
+          </div>
+        )}
+
         {isLoading ? (
           <div className="space-y-4 animate-pulse">
             {[1, 2, 3].map((i) => (
@@ -401,8 +448,9 @@ export default function CustomerMenu() {
                     <span className="font-extrabold text-slate-900 text-lg">LKR {item.base_price.toFixed(2)}</span>
                     <Button 
                       size="sm" 
-                      className="rounded-full bg-slate-900 text-white hover:bg-amber-500 hover:text-white px-5 font-semibold transition-all duration-300 shadow-md shadow-slate-900/10 active:scale-95"
+                      className="rounded-full bg-slate-900 text-white hover:bg-amber-500 hover:text-white px-5 font-semibold transition-all duration-300 shadow-md shadow-slate-900/10 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-900 disabled:hover:text-white"
                       onClick={() => addItem(item)}
+                      disabled={isClosed}
                     >
                       <Plus className="h-4 w-4 mr-1.5" /> Add
                     </Button>
