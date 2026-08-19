@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getUser } from '@/lib/auth/getUser';
 import { redirect } from 'next/navigation';
 import { LayoutDashboard, Menu as MenuIcon, Store, Users, Tags, Map, ShoppingBag } from 'lucide-react';
+import { AdminMobileNav } from './AdminMobileNav';
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const { role } = await getUser();
@@ -97,32 +98,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around items-center h-16 z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] pb-safe px-1">
-        <Link href="/admin" className="flex flex-col items-center justify-center w-full h-full text-slate-500 hover:text-indigo-600 transition-colors">
-          <LayoutDashboard className="h-[22px] w-[22px] mb-1" />
-          <span className="text-[9px] font-bold tracking-tight">Home</span>
-        </Link>
-        <Link href="/admin/orders" className="flex flex-col items-center justify-center w-full h-full text-slate-500 hover:text-indigo-600 transition-colors">
-          <ShoppingBag className="h-[22px] w-[22px] mb-1" />
-          <span className="text-[9px] font-bold tracking-tight">Orders</span>
-        </Link>
-        <Link href="/admin/zones" className="flex flex-col items-center justify-center w-full h-full text-slate-500 hover:text-indigo-600 transition-colors">
-          <Map className="h-[22px] w-[22px] mb-1" />
-          <span className="text-[9px] font-bold tracking-tight">Zones</span>
-        </Link>
-        <Link href="/admin/categories" className="flex flex-col items-center justify-center w-full h-full text-slate-500 hover:text-indigo-600 transition-colors">
-          <Tags className="h-[22px] w-[22px] mb-1" />
-          <span className="text-[9px] font-bold tracking-tight">Categories</span>
-        </Link>
-        <Link href="/admin/menu" className="flex flex-col items-center justify-center w-full h-full text-slate-500 hover:text-indigo-600 transition-colors">
-          <MenuIcon className="h-[22px] w-[22px] mb-1" />
-          <span className="text-[9px] font-bold tracking-tight">Menu</span>
-        </Link>
-        <Link href="/admin/staff" className="flex flex-col items-center justify-center w-full h-full text-slate-500 hover:text-indigo-600 transition-colors">
-          <Users className="h-[22px] w-[22px] mb-1" />
-          <span className="text-[9px] font-bold tracking-tight">Staff</span>
-        </Link>
-      </nav>
+      <AdminMobileNav />
     </div>
   );
 }

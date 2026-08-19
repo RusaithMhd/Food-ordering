@@ -10,6 +10,8 @@ import { Hotel, ChefHat, Bike, LayoutDashboard, ShoppingBag, LogOut, LogIn, Menu
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useState, useEffect } from 'react';
+import { X } from 'lucide-react';
+import { getActiveOrdersStatus } from '@/actions/orders/get-active-orders';
 
 export function Navbar() {
   const { user, userRole, loading } = useAuth();
@@ -20,6 +22,47 @@ export function Navbar() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const [toast, setToast] = useState<{ show: boolean; status: string; total: number } | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+
+    let previousStatuses: { [orderId: string]: string } = {};
+    let isInitial = true;
+
+    const pollOrders = async () => {
+      try {
+        const res = await getActiveOrdersStatus();
+        if (res.success && res.orders) {
+          res.orders.forEach((order: any) => {
+            const prevStatus = previousStatuses[order.id];
+            if (!isInitial && prevStatus && prevStatus !== order.status) {
+              setToast({ show: true, status: order.status, total: order.total });
+            }
+            previousStatuses[order.id] = order.status;
+          });
+          isInitial = false;
+        }
+      } catch (err) {
+        console.error('Error polling order statuses:', err);
+      }
+    };
+
+    pollOrders();
+    const interval = setInterval(pollOrders, 6000); // Poll every 6 seconds
+    return () => clearInterval(interval);
+  }, [user]);
+
+  // Auto-hide toast when it appears
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => {
+        setToast(null);
+      }, 7000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
 
   // Hide the navbar inside the admin dashboard as it has its own sidebar
   if (pathname?.startsWith('/admin')) {
@@ -142,6 +185,30 @@ export function Navbar() {
             )}
           </div>
       </nav>
+
+      {/* Real-time Order Status Notification Toast */}
+      {toast && (
+        <div className="fixed bottom-24 md:bottom-6 left-4 right-4 md:left-auto md:right-6 md:w-full md:max-w-sm z-50 animate-in slide-in-from-bottom-5 fade-in duration-300 pointer-events-auto">
+          <div className="bg-slate-900 border border-slate-800 text-white rounded-3xl p-5 shadow-2xl flex items-start space-x-4 w-full relative overflow-hidden backdrop-blur-xl bg-opacity-95">
+            <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-indigo-500 to-purple-500" />
+            <div className="w-10 h-10 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-400 shrink-0 shadow-inner">
+              <ShoppingBag className="w-5 h-5 animate-bounce text-indigo-400" />
+            </div>
+            <div className="flex-1 min-w-0 pr-4">
+              <h4 className="text-sm font-bold text-slate-100">Order Status Update!</h4>
+              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                Your order of <strong className="text-indigo-400">LKR {Number(toast.total).toFixed(2)}</strong> is now <span className="font-extrabold text-white bg-indigo-600 px-2 py-0.5 rounded text-[10px] tracking-wider uppercase ml-1">{toast.status.replace(/_/g, ' ')}</span>.
+              </p>
+            </div>
+            <button 
+              onClick={() => setToast(null)}
+              className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-200 transition-colors shrink-0"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

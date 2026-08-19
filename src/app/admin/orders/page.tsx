@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { OrderStatusSelect } from './OrderStatusSelect';
 import { createAdminClient } from '@/lib/supabase/server';
 import { AdminCreateOrderDialog } from './AdminCreateOrderDialog';
+import { OrderSearchForm } from './OrderSearchForm';
 
 export const metadata = {
   title: 'Manage Orders - Admin',
@@ -28,13 +29,15 @@ function getStatusColor(status: string) {
   }
 }
 
-export default async function AdminOrdersPage({
-  searchParams,
-}: {
-  searchParams: { status?: string };
+export default async function AdminOrdersPage(props: {
+  searchParams: Promise<{ status?: string; date_range?: string; phone?: string }>;
 }) {
-  const statusFilter = searchParams.status || 'ALL';
-  const orders = await getAdminOrders(statusFilter);
+  const searchParams = await props.searchParams;
+  const statusFilter = searchParams?.status || 'ALL';
+  const dateRangeFilter = searchParams?.date_range || 'TODAY';
+  const phoneFilter = searchParams?.phone || '';
+  
+  const orders = await getAdminOrders(statusFilter, dateRangeFilter, phoneFilter);
 
   const supabase = await createAdminClient();
   const { data: menuItems } = await supabase.from('menu_items').select('id, name, base_price').eq('is_active', true).order('name');
@@ -92,17 +95,50 @@ export default async function AdminOrdersPage({
         </div>
       </div>
 
+      {/* Phone Number Search Form */}
+      <OrderSearchForm 
+        initialPhone={phoneFilter} 
+        statusFilter={statusFilter} 
+        dateRangeFilter={dateRangeFilter} 
+      />
+
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         {/* Filter Bar */}
-        <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center space-x-2 overflow-x-auto hide-scrollbar">
-          <Link href="/admin/orders" className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-colors ${statusFilter === 'ALL' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'}`}>
-            All Orders
-          </Link>
-          {['PLACED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'].map((status) => (
-            <Link key={status} href={`/admin/orders?status=${status}`} className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-colors ${statusFilter === status ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'}`}>
-              {formatStatus(status)}
+        <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-col gap-3">
+          {/* Date Filter Segment */}
+          <div className="flex items-center space-x-2 overflow-x-auto hide-scrollbar">
+            <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider mr-2 select-none shrink-0">Time Range:</span>
+            {[
+              { label: "Today's Orders", value: 'TODAY' },
+              { label: 'Past Orders', value: 'PAST' },
+              { label: 'All Time', value: 'ALL' }
+            ].map((range) => (
+              <Link
+                key={range.value}
+                href={`/admin/orders?date_range=${range.value}${statusFilter !== 'ALL' ? `&status=${statusFilter}` : ''}${phoneFilter ? `&phone=${encodeURIComponent(phoneFilter)}` : ''}`}
+                className={`px-4.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-200 border ${
+                  dateRangeFilter === range.value 
+                    ? 'bg-slate-900 text-white border-slate-900 shadow-sm' 
+                    : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
+                }`}
+              >
+                {range.label}
+              </Link>
+            ))}
+          </div>
+
+          {/* Status Filter Segment */}
+          <div className="flex items-center space-x-2 overflow-x-auto hide-scrollbar border-t border-slate-100 pt-3">
+            <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider mr-2 select-none shrink-0">Status:</span>
+            <Link href={`/admin/orders?date_range=${dateRangeFilter}${phoneFilter ? `&phone=${encodeURIComponent(phoneFilter)}` : ''}`} className={`px-4 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-200 border ${statusFilter === 'ALL' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'}`}>
+              All Statuses
             </Link>
-          ))}
+            {['PLACED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'].map((status) => (
+              <Link key={status} href={`/admin/orders?date_range=${dateRangeFilter}&status=${status}${phoneFilter ? `&phone=${encodeURIComponent(phoneFilter)}` : ''}`} className={`px-4 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-200 border ${statusFilter === status ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'}`}>
+                {formatStatus(status)}
+              </Link>
+            ))}
+          </div>
         </div>
 
         {/* Orders Table */}

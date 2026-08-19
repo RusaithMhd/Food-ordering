@@ -5,7 +5,7 @@ import { withAuth } from '@/lib/permissions/withAuth';
 import { revalidatePath } from 'next/cache';
 
 export const getAdminOrders = withAuth(
-  async (statusFilter?: string) => {
+  async (statusFilter?: string, dateRangeFilter?: string, phoneFilter?: string) => {
     const supabase = await createAdminClient();
     
     let query = supabase
@@ -36,6 +36,15 @@ export const getAdminOrders = withAuth(
       query = query.eq('status', statusFilter);
     }
 
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    if (dateRangeFilter === 'TODAY' || !dateRangeFilter) {
+      query = query.gte('placed_at', todayStart.toISOString());
+    } else if (dateRangeFilter === 'PAST') {
+      query = query.lt('placed_at', todayStart.toISOString());
+    }
+
     const { data, error } = await query;
 
     if (error) {
@@ -43,7 +52,19 @@ export const getAdminOrders = withAuth(
       throw new Error('Failed to fetch orders');
     }
 
-    return data;
+    let filteredData = data;
+    if (phoneFilter && phoneFilter.trim() !== '') {
+      const cleanPhone = phoneFilter.replace(/[^0-9+]/g, '');
+      if (cleanPhone) {
+        filteredData = data?.filter((order: any) => {
+          const snapshotPhone = order.delivery_address_snapshot?.phone || '';
+          const profilePhone = order.profiles?.phone_number || '';
+          return snapshotPhone.includes(cleanPhone) || profilePhone.includes(cleanPhone);
+        }) || [];
+      }
+    }
+
+    return filteredData;
   },
   { requiredRoles: ['ADMIN', 'MANAGER', 'SUPER_ADMIN'] }
 );

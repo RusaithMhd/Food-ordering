@@ -65,7 +65,6 @@ export default function AccountPage() {
 
   const menuItems = [
     { icon: ShoppingBag, label: 'My Orders', href: '/orders', color: 'text-indigo-500', bg: 'bg-indigo-100', isLink: true },
-    { icon: Bell, label: 'Notifications', href: '#', color: 'text-rose-500', bg: 'bg-rose-100', isLink: true },
   ];
 
   return (
@@ -80,12 +79,7 @@ export default function AccountPage() {
           <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-indigo-50 to-transparent rounded-full -mr-10 -mt-10 blur-2xl" />
           
           <div className="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center border-4 border-white shadow-md relative z-10">
-            {user.photoURL ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={user.photoURL} alt="Profile" className="w-full h-full rounded-full object-cover" />
-            ) : (
-              <span className="text-2xl font-black text-indigo-700">{initial}</span>
-            )}
+            <span className="text-2xl font-black text-indigo-700">{initial}</span>
           </div>
           
           <div className="flex-1 relative z-10">
