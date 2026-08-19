@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 import Link from 'next/link';
 import { getUser } from '@/lib/auth/getUser';
 import { redirect } from 'next/navigation';
-import { LayoutDashboard, Menu as MenuIcon, Store, Users, Tags, Map, ShoppingBag } from 'lucide-react';
+import { LayoutDashboard, Menu as MenuIcon, Store, Users, Tags, Map, ShoppingBag, Settings } from 'lucide-react';
 import { AdminMobileNav } from './AdminMobileNav';
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
@@ -23,30 +23,18 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     }
 
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-[#FAFAFA] font-sans selection:bg-indigo-100 selection:text-indigo-900">
-      
-      {/* Mobile Top Bar */}
-      <div className="md:hidden flex items-center justify-between h-16 bg-slate-950 px-4 shrink-0 shadow-sm z-30">
-        <div className="flex items-center">
-          <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center mr-3 shadow-lg shadow-indigo-500/20">
-            <LayoutDashboard className="h-4 w-4 text-white" />
-          </div>
-          <h1 className="font-bold text-lg tracking-tight text-white">Admin Panel</h1>
-        </div>
-        <Link href="/" className="text-xs font-medium text-indigo-400 hover:text-indigo-300 px-3 py-1.5 rounded-md bg-white/10">
-          Exit
-        </Link>
-      </div>
-
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-64 bg-slate-950 text-slate-300 flex-col shadow-2xl z-20 shrink-0">
+    <div className="min-h-screen flex bg-slate-950 text-slate-100 font-sans">
+      {/* Sidebar - Hidden on mobile */}
+      <aside className="hidden md:flex flex-col w-64 border-r border-white/10 bg-slate-900 shrink-0">
         <div className="h-16 flex items-center px-6 border-b border-white/10">
-          <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center mr-3 shadow-lg shadow-indigo-500/20">
-            <LayoutDashboard className="h-4 w-4 text-white" />
-          </div>
-          <h1 className="font-bold text-lg tracking-tight text-white">Admin Panel</h1>
+          <Link href="/admin" className="flex items-center space-x-2.5">
+            <div className="bg-indigo-600 p-1.5 rounded-lg text-white">
+              <Store className="h-5 w-5" />
+            </div>
+            <span className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">Admin Panel</span>
+          </Link>
         </div>
-        
+
         <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-1.5 hide-scrollbar">
           <Link href="/admin" className="flex items-center space-x-3 px-3 py-2.5 rounded-xl transition-all duration-200 hover:bg-white/10 hover:text-white font-medium group">
             <LayoutDashboard className="h-5 w-5 text-slate-500 group-hover:text-indigo-400 transition-colors" />
@@ -71,6 +59,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           <Link href="/admin/staff" className="flex items-center space-x-3 px-3 py-2.5 rounded-xl transition-all duration-200 hover:bg-white/10 hover:text-white font-medium group">
             <Users className="h-5 w-5 text-slate-500 group-hover:text-indigo-400 transition-colors" />
             <span>Staff &amp; Users</span>
+          </Link>
+          <Link href="/admin/settings" className="flex items-center space-x-3 px-3 py-2.5 rounded-xl transition-all duration-200 hover:bg-white/10 hover:text-white font-medium group">
+            <Settings className="h-5 w-5 text-slate-500 group-hover:text-indigo-400 transition-colors" />
+            <span>Hotel Settings</span>
           </Link>
         </nav>
 

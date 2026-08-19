@@ -112,3 +112,51 @@ export const updateKitchenClosingTimes = withAuth(
   { requiredRoles: ['ADMIN', 'MANAGER', 'SUPER_ADMIN'] }
 );
 
+export const updateHotelBranding = withAuth(
+  async (formData: FormData) => {
+    try {
+      const hotelId = formData.get('hotel_id') as string;
+      const name = formData.get('name') as string || '';
+      const phone = formData.get('phone') as string || '';
+      const address = formData.get('address') as string || '';
+
+      if (!hotelId) {
+        return { success: false, error: 'Hotel ID is required' };
+      }
+
+      const serialized = JSON.stringify({ name, phone, address });
+
+      const supabase = await createAdminClient();
+      
+      // 1. Update the hotel name with serialized JSON
+      const { error: hotelErr } = await supabase
+        .from('hotels')
+        .update({ name: serialized })
+        .eq('id', hotelId);
+
+      if (hotelErr) throw hotelErr;
+
+      // 2. Also update all branches names to this new name so they show correctly in order views!
+      const { error: branchErr } = await supabase
+        .from('branches')
+        .update({ name: name })
+        .eq('hotel_id', hotelId);
+
+      if (branchErr) {
+        console.error('Failed to sync branches names:', branchErr);
+      }
+
+      revalidatePath('/admin');
+      revalidatePath('/admin/settings');
+      revalidatePath('/');
+      revalidatePath('/orders');
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to update hotel branding settings:', error);
+      return { success: false, error: 'Failed to update hotel branding settings' };
+    }
+  },
+  { requiredRoles: ['ADMIN', 'MANAGER', 'SUPER_ADMIN'] }
+);
+

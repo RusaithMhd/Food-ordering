@@ -13,8 +13,11 @@ import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { getActiveOrdersStatus } from '@/actions/orders/get-active-orders';
 
+import { useBranch } from '@/features/branch/BranchContext';
+
 export function Navbar() {
   const { user, userRole, loading } = useAuth();
+  const { branch } = useBranch();
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -149,7 +152,7 @@ export function Navbar() {
                 <Hotel className="h-4 w-4 md:h-5 md:w-5 text-white" />
               </div>
               <span className="font-extrabold text-lg md:text-lg tracking-tight bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">
-                HotelEats
+                {branch?.name || 'Atheef Hotel'}
               </span>
             </Link>
 

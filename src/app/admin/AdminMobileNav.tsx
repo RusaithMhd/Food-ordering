@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ShoppingBag, Map, Tags, Menu as MenuIcon, Users } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, Map, Tags, Menu as MenuIcon, Users, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function AdminMobileNav() {
@@ -15,6 +15,7 @@ export function AdminMobileNav() {
     { href: '/admin/categories', label: 'Categories', icon: Tags },
     { href: '/admin/menu', label: 'Menu', icon: MenuIcon },
     { href: '/admin/staff', label: 'Staff', icon: Users },
+    { href: '/admin/settings', label: 'Settings', icon: Settings },
   ];
 
   return (
