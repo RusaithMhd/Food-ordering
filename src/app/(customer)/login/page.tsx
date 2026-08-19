@@ -16,13 +16,13 @@ export default function LoginPage() {
   useEffect(() => {
     if (user && !loading) {
       if (userRole === 'SUPER_ADMIN' || userRole === 'ADMIN' || userRole === 'MANAGER') {
-        router.push('/admin');
+        window.location.href = '/admin';
       } else if (userRole === 'KITCHEN') {
-        router.push('/kitchen');
+        window.location.href = '/kitchen';
       } else if (userRole === 'DELIVERY') {
-        router.push('/delivery');
+        window.location.href = '/delivery';
       } else {
-        router.push('/');
+        window.location.href = '/';
       }
     } else if (!user && !loading) {
       // Reset button state if verification fails and user is signed out
