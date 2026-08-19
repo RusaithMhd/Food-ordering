@@ -30,7 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (firebaseUser) {
         // Sync session with the server and map to Supabase
         try {
-          const token = await firebaseUser.getIdToken();
+          let token = await firebaseUser.getIdToken();
           
           // Prevent duplicate verify calls (e.g. from React 18 Strict Mode double-mounts)
           if (token === lastVerifiedToken) {
@@ -39,20 +39,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return;
           }
           
-          const res = await verifySession(token);
+          let res = await verifySession(token);
+          
+          // If session verification failed (e.g. ID token was minted >5 mins ago for session cookie creation), force refresh token
+          if (!res.success) {
+            token = await firebaseUser.getIdToken(true);
+            res = await verifySession(token);
+          }
+
           if (res.success) {
             lastVerifiedToken = token;
             cachedRole = res.role || null;
             setUserRole(res.role || null);
           } else {
-            console.error('Session verification failed on server');
+            console.warn('Session verification unauthorized:', res.error);
             lastVerifiedToken = null;
             cachedRole = null;
             setUserRole(null);
             await auth.signOut();
           }
         } catch (error) {
-          console.error('Exception during session verification:', error);
+          console.warn('Exception during session verification:', error);
           lastVerifiedToken = null;
           cachedRole = null;
           setUserRole(null);
