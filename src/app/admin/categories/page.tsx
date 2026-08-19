@@ -96,12 +96,12 @@ export default async function CategoryManagementPage(props: { searchParams: Prom
               </form>
             </div>
             
-            <div className="overflow-x-auto rounded-2xl border border-slate-100">
+            {/* Desktop View */}
+            <div className="hidden md:block overflow-x-auto rounded-2xl border border-slate-100">
               <table className="min-w-full divide-y divide-slate-100">
                 <thead className="bg-slate-50">
                   <tr>
                     <th className="px-5 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Category Name</th>
-
                     <th className="px-5 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
@@ -135,7 +135,7 @@ export default async function CategoryManagementPage(props: { searchParams: Prom
                             </Button>
                           </Link>
                           <form action={async () => { 'use server'; await deleteCategory(cat.id); }}>
-                            <Button variant="ghost" size="sm" className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
+                            <Button type="submit" variant="ghost" size="sm" className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
                               <Trash2 className="w-4 h-4 mr-1.5" /> Delete
                             </Button>
                           </form>
@@ -145,6 +145,43 @@ export default async function CategoryManagementPage(props: { searchParams: Prom
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile View */}
+            <div className="md:hidden divide-y divide-slate-100 border border-slate-100 rounded-2xl overflow-hidden bg-white">
+              {categories.length === 0 ? (
+                <div className="p-8 text-center text-slate-400 font-medium text-sm">
+                  <Tags className="w-10 h-10 mx-auto text-slate-200 mb-3" />
+                  No categories found. Add your first category!
+                </div>
+              ) : (
+                categories.map((cat) => (
+                  <div key={cat.id} className={`p-4 flex flex-col gap-3 transition-colors ${editCategory?.id === cat.id ? 'bg-rose-50/50' : ''}`}>
+                    <div className="flex items-center space-x-3">
+                      <div className="h-10 w-10 rounded-xl bg-rose-50 flex items-center justify-center border border-rose-100 text-rose-500 shrink-0">
+                        <Tags className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-extrabold text-slate-900 truncate">{cat.name}</div>
+                        {cat.description && <div className="text-xs font-semibold text-slate-500 mt-0.5 leading-relaxed">{cat.description}</div>}
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-end gap-2 border-t border-slate-50 pt-2.5">
+                      <Link href={`/admin/categories?edit=${cat.id}`} className="flex-1">
+                        <Button variant="outline" size="sm" className="w-full text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 border-slate-200 rounded-xl text-xs font-bold transition-all flex items-center justify-center h-9">
+                          <Edit2 className="w-3.5 h-3.5 mr-1" /> Edit
+                        </Button>
+                      </Link>
+                      <form action={async () => { 'use server'; await deleteCategory(cat.id); }} className="flex-1">
+                        <Button type="submit" variant="outline" size="sm" className="w-full text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200 rounded-xl text-xs font-bold transition-all flex items-center justify-center h-9">
+                          <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete
+                        </Button>
+                      </form>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
