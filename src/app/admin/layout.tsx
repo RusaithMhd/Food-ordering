@@ -23,9 +23,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     }
 
   return (
-    <div className="min-h-screen flex bg-slate-950 text-slate-100 font-sans">
+    <div className="h-screen w-screen flex bg-slate-950 text-slate-100 font-sans overflow-hidden">
       {/* Sidebar - Hidden on mobile */}
-      <aside className="hidden md:flex flex-col w-64 border-r border-white/10 bg-slate-900 shrink-0">
+      <aside className="hidden md:flex flex-col w-64 border-r border-white/10 bg-slate-900 shrink-0 h-full">
         <div className="h-16 flex items-center px-6 border-b border-white/10">
           <Link href="/admin" className="flex items-center space-x-2.5">
             <div className="bg-indigo-600 p-1.5 rounded-lg text-white">
