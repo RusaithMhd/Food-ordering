@@ -7,8 +7,10 @@ if (!getApps().length) {
       credential: cert({
         projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
         clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        // Handle newlines in private key securely
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        // Handle newlines in private key securely (Vercel adds literal \n or quotes)
+        privateKey: process.env.FIREBASE_PRIVATE_KEY
+          ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n').replace(/"/g, '')
+          : undefined,
       }),
     });
   } catch (error) {
@@ -16,4 +18,11 @@ if (!getApps().length) {
   }
 }
 
-export const adminAuth = getAuth();
+export const adminAuth = (() => {
+  try {
+    return getAuth();
+  } catch (error) {
+    console.error('Failed to get Firebase Auth instance', error);
+    return null as any;
+  }
+})();
