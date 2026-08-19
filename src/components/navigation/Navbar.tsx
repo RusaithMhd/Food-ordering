@@ -25,6 +25,7 @@ export function Navbar() {
     try {
       await signOut(auth);
       setIsMobileMenuOpen(false);
+      window.location.href = '/';
     } catch (error) {
       console.error('Sign out error', error);
     }
@@ -87,44 +88,13 @@ export function Navbar() {
   );
 
   return (
-    <div className="sticky top-2 md:top-4 z-50 mx-auto max-w-7xl px-2 md:px-4 sm:px-6 lg:px-8 mb-6 pointer-events-none">
-      <nav className="flex h-16 items-center justify-between rounded-2xl bg-white/70 backdrop-blur-md border border-white/40 shadow-sm px-4 pointer-events-auto transition-all duration-300 hover:bg-white/90">
+    <div className="sticky top-0 md:top-4 z-40 w-full mx-auto max-w-7xl md:px-4 sm:px-6 lg:px-8 mb-4 md:mb-6 pointer-events-none">
+      <nav className="flex w-full h-14 md:h-16 items-center justify-between md:rounded-2xl bg-white/80 md:bg-white/70 backdrop-blur-md border-b md:border border-slate-200/60 md:border-white/40 shadow-sm px-4 md:px-6 pointer-events-auto transition-all duration-300 hover:bg-white/90">
         
         <div className="flex items-center">
-            {/* Mobile Menu Trigger */}
-            <div className="md:hidden mr-2">
-              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-                <SheetTrigger render={<Button variant="ghost" size="icon" className="text-slate-600 hover:bg-slate-100 rounded-xl" />}>
-                  <MenuIcon className="h-5 w-5" />
-                </SheetTrigger>
-                <SheetContent side="left" className="w-[300px] sm:w-[350px] p-0 bg-white">
-                  <SheetHeader className="p-6 text-left border-b border-slate-100">
-                    <SheetTitle className="flex items-center space-x-2">
-                      <div className="bg-slate-900 p-2 rounded-xl shadow-lg shadow-slate-900/10">
-                        <Hotel className="h-5 w-5 text-white" />
-                      </div>
-                      <span className="font-extrabold text-lg tracking-tight text-slate-900">
-                        Menu
-                      </span>
-                    </SheetTitle>
-                  </SheetHeader>
-                  <div className="p-4 flex flex-col space-y-2">
-                    {renderNavLinks(true)}
-                    
-                    {!loading && user && (
-                       <Button onClick={handleSignOut} variant="ghost" className="justify-start text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-xl font-semibold mt-4">
-                         <LogOut className="w-5 h-5 mr-3" />
-                         Sign Out
-                       </Button>
-                    )}
-                  </div>
-                </SheetContent>
-              </Sheet>
-            </div>
-
             <Link href="/" className="flex items-center space-x-2 group">
-              <div className="hidden md:flex bg-slate-900 p-2 rounded-xl group-hover:bg-indigo-600 transition-colors shadow-lg shadow-slate-900/10">
-                <Hotel className="h-5 w-5 text-white" />
+              <div className="flex bg-slate-900 p-1.5 md:p-2 rounded-xl group-hover:bg-indigo-600 transition-colors shadow-lg shadow-slate-900/10">
+                <Hotel className="h-4 w-4 md:h-5 md:w-5 text-white" />
               </div>
               <span className="font-extrabold text-lg md:text-lg tracking-tight bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">
                 HotelEats

@@ -7,6 +7,7 @@ import { BranchProvider } from "@/features/branch/BranchContext";
 import { CartProvider } from "@/features/cart/CartContext";
 import { CartDrawer } from "@/features/cart/CartDrawer";
 import { Navbar } from "@/components/navigation/Navbar";
+import { MobileNav } from "@/components/navigation/MobileNav";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,13 +34,14 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col pb-20 md:pb-0">
         <AuthProvider>
           <Suspense fallback={<div>Loading context...</div>}>
             <BranchProvider>
               <CartProvider>
                 <Navbar />
                 {children}
+                <MobileNav />
                 <CartDrawer />
               </CartProvider>
             </BranchProvider>

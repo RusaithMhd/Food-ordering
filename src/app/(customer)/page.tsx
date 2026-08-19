@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { ShoppingCart, Plus, MapPin, Truck, UtensilsCrossed, Sparkles, Coffee, Moon, Clock, Flame, Star, ShieldCheck, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/features/auth/AuthProvider';
 import Link from 'next/link';
+import { getDailyQuote } from '@/utils/quotes';
 
 export default function CustomerMenu() {
   const { branchId, branch, isLoading: isContextLoading, setContext } = useBranch();
@@ -32,6 +33,9 @@ export default function CustomerMenu() {
 
   // Fetch branches if no branch is selected (Landing Page mode)
   useEffect(() => {
+    // Wait for context to finish its initial load/auto-selection
+    if (isContextLoading) return;
+
     if (!branchId) {
       const fetchBranches = async () => {
         setIsLoading(true);
@@ -41,6 +45,11 @@ export default function CustomerMenu() {
         setIsLoading(false);
       };
       fetchBranches();
+      return;
+    }
+
+    // Don't fetch the menu until the user has actually selected a meal type!
+    if (!selectedMealType) {
       return;
     }
 
@@ -58,8 +67,6 @@ export default function CustomerMenu() {
         
       if (cats && cats.length > 0) {
         // If a meal type was selected, filter categories that might match it.
-        // E.g., if they selected "Breakfast", only show categories with "Breakfast" in the name.
-        // If no categories match (e.g. they don't have a Breakfast category), just show all categories.
         let filteredCats = cats;
         if (selectedMealType) {
           const matched = cats.filter(c => c.name.toLowerCase().includes(selectedMealType.toLowerCase()));
@@ -86,18 +93,8 @@ export default function CustomerMenu() {
     };
 
     fetchMenu();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [branchId, selectedMealType]);
-
-  if (isContextLoading) {
-    return (
-      <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center">
-        <div className="animate-pulse flex flex-col items-center">
-          <Truck className="h-8 w-8 text-slate-300 mb-4" />
-          <p className="text-slate-400 font-medium tracking-wide">Loading...</p>
-        </div>
-      </div>
-    );
-  }
 
   // -------------------------------------------------------------
   // LANDING PAGE (No Branch Selected)
@@ -107,8 +104,8 @@ export default function CustomerMenu() {
       <div className="min-h-screen flex flex-col relative overflow-hidden bg-slate-50">
         
         {/* Animated Background Gradients */}
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-gradient-to-br from-amber-200/40 to-orange-200/40 blur-3xl animate-pulse" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-gradient-to-br from-indigo-200/40 to-purple-200/40 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-gradient-to-br from-amber-200/40 to-orange-200/40 blur-3xl" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-gradient-to-br from-indigo-200/40 to-purple-200/40 blur-3xl" />
         
         {/* Header / Quote Section */}
         <div className="w-full max-w-5xl mx-auto pt-16 pb-8 px-6 relative z-10 text-center flex flex-col items-center">
@@ -124,118 +121,113 @@ export default function CustomerMenu() {
               right now?
             </span>
           </h1>
-          
+
           {/* Daily Quote Card */}
           <div className="bg-white/60 backdrop-blur-md p-6 rounded-3xl border border-white/50 shadow-lg max-w-2xl mx-auto animate-in slide-in-from-bottom-8 fade-in duration-700 delay-200 relative overflow-hidden group">
             <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-amber-400 to-rose-400" />
             <p className="text-lg md:text-xl font-medium text-slate-700 italic relative z-10">
-              "{import('@/utils/quotes').then(m => m.getDailyQuote()).catch(() => "Good food is the foundation of genuine happiness.")}"
+              "{getDailyQuote()}"
             </p>
           </div>
         </div>
 
         {/* Meal Selection Cards */}
+        {/* Meal Selection Cards */}
         <div className="flex-1 w-full max-w-6xl mx-auto px-6 pb-20 relative z-10 flex flex-col justify-center">
           
-          {isLoading ? (
-            <div className="flex justify-center items-center h-48">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              
-              {/* Breakfast Card */}
-              <button
-                onClick={() => {
-                  setSelectedMealType('Breakfast');
-                  if (availableBranches.length > 0) {
-                    setContext(availableBranches[0].id);
-                  }
-                }}
-                className="group relative h-48 md:h-64 bg-gradient-to-br from-amber-50 to-orange-50 rounded-[2rem] p-8 shadow-sm hover:shadow-2xl border border-amber-100/50 hover:border-amber-300 transition-all duration-500 transform hover:-translate-y-2 overflow-hidden text-left outline-none focus:ring-4 focus:ring-amber-500/20"
-              >
-                <div className="absolute right-[-20%] top-[-20%] w-48 h-48 bg-amber-200/50 rounded-full blur-3xl group-hover:bg-amber-300/60 transition-colors duration-500" />
-                <div className="relative z-10 flex flex-col h-full justify-between">
-                  <div className="flex justify-between items-start">
-                    <div className="w-14 h-14 bg-white/80 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-110 group-hover:rotate-6 transition-transform duration-500">
-                      <Coffee className="w-7 h-7 text-amber-500" />
-                    </div>
-                    <div className="flex items-center bg-amber-100/50 text-amber-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider backdrop-blur-sm">
-                      <Clock className="w-3 h-3 mr-1" /> 7am - 11am
-                    </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            {/* Breakfast Card */}
+            <button
+              onClick={() => {
+                setSelectedMealType('Breakfast');
+                if (availableBranches.length > 0) {
+                  setContext(availableBranches[0].id);
+                }
+              }}
+              className="group relative h-48 md:h-64 bg-gradient-to-br from-amber-50 to-orange-50 rounded-[2rem] p-8 shadow-sm hover:shadow-2xl border border-amber-100/50 hover:border-amber-300 transition-all duration-500 transform hover:-translate-y-2 overflow-hidden text-left outline-none focus:ring-4 focus:ring-amber-500/20"
+            >
+              <div className="absolute right-[-20%] top-[-20%] w-48 h-48 bg-amber-200/50 rounded-full blur-3xl group-hover:bg-amber-300/60 transition-colors duration-500" />
+              <div className="relative z-10 flex flex-col h-full justify-between">
+                <div className="flex justify-between items-start">
+                  <div className="w-14 h-14 bg-white/80 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-110 group-hover:rotate-6 transition-transform duration-500">
+                    <Coffee className="w-7 h-7 text-amber-500" />
                   </div>
-                  <div>
-                    <h2 className="text-3xl font-black text-slate-800 mb-1 group-hover:text-amber-700 transition-colors">Breakfast</h2>
-                    <p className="text-amber-700/70 font-medium mb-3">Fresh pastries & hot coffee</p>
-                    <div className="flex items-center text-amber-600 font-bold text-sm group-hover:translate-x-1 transition-transform">
-                      Explore Menu <ChevronRight className="w-4 h-4 ml-1" />
-                    </div>
+                  <div className="flex items-center bg-amber-100/50 text-amber-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider backdrop-blur-sm">
+                    <Clock className="w-3 h-3 mr-1" /> 7am - 11am
                   </div>
                 </div>
-              </button>
-
-              {/* Lunch Card */}
-              <button
-                onClick={() => {
-                  setSelectedMealType('Lunch');
-                  if (availableBranches.length > 0) {
-                    setContext(availableBranches[0].id);
-                  }
-                }}
-                className="group relative h-48 md:h-64 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-[2rem] p-8 shadow-sm hover:shadow-2xl border border-emerald-100/50 hover:border-emerald-300 transition-all duration-500 transform hover:-translate-y-2 overflow-hidden text-left outline-none focus:ring-4 focus:ring-emerald-500/20"
-              >
-                <div className="absolute right-[-20%] top-[-20%] w-48 h-48 bg-emerald-200/50 rounded-full blur-3xl group-hover:bg-emerald-300/60 transition-colors duration-500" />
-                <div className="relative z-10 flex flex-col h-full justify-between">
-                  <div className="flex justify-between items-start">
-                    <div className="w-14 h-14 bg-white/80 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-110 group-hover:rotate-6 transition-transform duration-500">
-                      <UtensilsCrossed className="w-7 h-7 text-emerald-500" />
-                    </div>
-                    <div className="flex items-center bg-emerald-100/50 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider backdrop-blur-sm">
-                      <Clock className="w-3 h-3 mr-1" /> 11am - 4pm
-                    </div>
-                  </div>
-                  <div>
-                    <h2 className="text-3xl font-black text-slate-800 mb-1 group-hover:text-emerald-700 transition-colors">Lunch</h2>
-                    <p className="text-emerald-700/70 font-medium mb-3">Hearty midday meals</p>
-                    <div className="flex items-center text-emerald-600 font-bold text-sm group-hover:translate-x-1 transition-transform">
-                      Explore Menu <ChevronRight className="w-4 h-4 ml-1" />
-                    </div>
+                <div>
+                  <h2 className="text-3xl font-black text-slate-800 mb-1 group-hover:text-amber-700 transition-colors">Breakfast</h2>
+                  <p className="text-amber-700/70 font-medium mb-3">Fresh pastries & hot coffee</p>
+                  <div className="flex items-center text-amber-600 font-bold text-sm group-hover:translate-x-1 transition-transform">
+                    Explore Menu <ChevronRight className="w-4 h-4 ml-1" />
                   </div>
                 </div>
-              </button>
+              </div>
+            </button>
 
-              {/* Dinner Card */}
-              <button
-                onClick={() => {
-                  setSelectedMealType('Dinner');
-                  if (availableBranches.length > 0) {
-                    setContext(availableBranches[0].id);
-                  }
-                }}
-                className="group relative h-48 md:h-64 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-[2rem] p-8 shadow-sm hover:shadow-2xl border border-indigo-100/50 hover:border-indigo-300 transition-all duration-500 transform hover:-translate-y-2 overflow-hidden text-left outline-none focus:ring-4 focus:ring-indigo-500/20"
-              >
-                <div className="absolute right-[-20%] top-[-20%] w-48 h-48 bg-indigo-200/50 rounded-full blur-3xl group-hover:bg-indigo-300/60 transition-colors duration-500" />
-                <div className="relative z-10 flex flex-col h-full justify-between">
-                  <div className="flex justify-between items-start">
-                    <div className="w-14 h-14 bg-white/80 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-110 group-hover:rotate-6 transition-transform duration-500">
-                      <Moon className="w-7 h-7 text-indigo-500" />
-                    </div>
-                    <div className="flex items-center bg-indigo-100/50 text-indigo-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider backdrop-blur-sm">
-                      <Clock className="w-3 h-3 mr-1" /> 4pm - 11pm
-                    </div>
+            {/* Lunch Card */}
+            <button
+              onClick={() => {
+                setSelectedMealType('Lunch');
+                if (availableBranches.length > 0) {
+                  setContext(availableBranches[0].id);
+                }
+              }}
+              className="group relative h-48 md:h-64 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-[2rem] p-8 shadow-sm hover:shadow-2xl border border-emerald-100/50 hover:border-emerald-300 transition-all duration-500 transform hover:-translate-y-2 overflow-hidden text-left outline-none focus:ring-4 focus:ring-emerald-500/20"
+            >
+              <div className="absolute right-[-20%] top-[-20%] w-48 h-48 bg-emerald-200/50 rounded-full blur-3xl group-hover:bg-emerald-300/60 transition-colors duration-500" />
+              <div className="relative z-10 flex flex-col h-full justify-between">
+                <div className="flex justify-between items-start">
+                  <div className="w-14 h-14 bg-white/80 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-110 group-hover:rotate-6 transition-transform duration-500">
+                    <UtensilsCrossed className="w-7 h-7 text-emerald-500" />
                   </div>
-                  <div>
-                    <h2 className="text-3xl font-black text-slate-800 mb-1 group-hover:text-indigo-700 transition-colors">Dinner</h2>
-                    <p className="text-indigo-700/70 font-medium mb-3">The perfect evening</p>
-                    <div className="flex items-center text-indigo-600 font-bold text-sm group-hover:translate-x-1 transition-transform">
-                      Explore Menu <ChevronRight className="w-4 h-4 ml-1" />
-                    </div>
+                  <div className="flex items-center bg-emerald-100/50 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider backdrop-blur-sm">
+                    <Clock className="w-3 h-3 mr-1" /> 11am - 4pm
                   </div>
                 </div>
-              </button>
+                <div>
+                  <h2 className="text-3xl font-black text-slate-800 mb-1 group-hover:text-emerald-700 transition-colors">Lunch</h2>
+                  <p className="text-emerald-700/70 font-medium mb-3">Hearty midday meals</p>
+                  <div className="flex items-center text-emerald-600 font-bold text-sm group-hover:translate-x-1 transition-transform">
+                    Explore Menu <ChevronRight className="w-4 h-4 ml-1" />
+                  </div>
+                </div>
+              </div>
+            </button>
 
-            </div>
-          )}
+            {/* Dinner Card */}
+            <button
+              onClick={() => {
+                setSelectedMealType('Dinner');
+                if (availableBranches.length > 0) {
+                  setContext(availableBranches[0].id);
+                }
+              }}
+              className="group relative h-48 md:h-64 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-[2rem] p-8 shadow-sm hover:shadow-2xl border border-indigo-100/50 hover:border-indigo-300 transition-all duration-500 transform hover:-translate-y-2 overflow-hidden text-left outline-none focus:ring-4 focus:ring-indigo-500/20"
+            >
+              <div className="absolute right-[-20%] top-[-20%] w-48 h-48 bg-indigo-200/50 rounded-full blur-3xl group-hover:bg-indigo-300/60 transition-colors duration-500" />
+              <div className="relative z-10 flex flex-col h-full justify-between">
+                <div className="flex justify-between items-start">
+                  <div className="w-14 h-14 bg-white/80 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-110 group-hover:rotate-6 transition-transform duration-500">
+                    <Moon className="w-7 h-7 text-indigo-500" />
+                  </div>
+                  <div className="flex items-center bg-indigo-100/50 text-indigo-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider backdrop-blur-sm">
+                    <Clock className="w-3 h-3 mr-1" /> 4pm - 11pm
+                  </div>
+                </div>
+                <div>
+                  <h2 className="text-3xl font-black text-slate-800 mb-1 group-hover:text-indigo-700 transition-colors">Dinner</h2>
+                  <p className="text-indigo-700/70 font-medium mb-3">The perfect evening</p>
+                  <div className="flex items-center text-indigo-600 font-bold text-sm group-hover:translate-x-1 transition-transform">
+                    Explore Menu <ChevronRight className="w-4 h-4 ml-1" />
+                  </div>
+                </div>
+              </div>
+            </button>
+
+          </div>
           
           {availableBranches.length === 0 && !isLoading && (
             <div className="mt-8 p-8 text-center bg-white rounded-3xl border border-slate-100 border-dashed">
@@ -313,7 +305,7 @@ export default function CustomerMenu() {
   return (
     <div className="min-h-screen bg-[#F8F9FA] pb-24 font-sans selection:bg-slate-200 selection:text-slate-900">
       {/* Premium Glass Header */}
-      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-slate-200/60 shadow-sm transition-all duration-300">
+      <header className="sticky top-14 md:top-[80px] z-30 bg-white/80 backdrop-blur-xl border-b border-slate-200/60 shadow-sm transition-all duration-300">
         <div className="px-5 py-4 flex justify-between items-center max-w-4xl mx-auto">
           <div className="flex items-center space-x-3">
             {/* Back button removed since there is only one kitchen */}
@@ -328,7 +320,7 @@ export default function CustomerMenu() {
             </div>
           </div>
           
-          <div className="flex items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-4">
             
             <button 
               onClick={() => setIsCartOpen(true)}
@@ -440,9 +432,9 @@ export default function CustomerMenu() {
 
       {/* Elegant Sticky Checkout Bar for Mobile */}
       {totalItems > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 p-5 bg-white/80 backdrop-blur-xl border-t border-slate-200/60 shadow-[0_-20px_40px_-15px_rgba(0,0,0,0.05)] z-20 md:hidden animate-in slide-in-from-bottom-4 duration-300">
+        <div className="fixed bottom-[76px] left-0 right-0 px-4 z-30 md:hidden animate-in slide-in-from-bottom-4 duration-300 pointer-events-none">
           <Button 
-            className="w-full h-14 rounded-2xl text-[17px] font-bold bg-slate-900 hover:bg-slate-800 text-white flex justify-between px-6 shadow-xl shadow-slate-900/20 active:scale-[0.98] transition-all"
+            className="w-full h-14 rounded-2xl text-[17px] font-bold bg-slate-900 hover:bg-slate-800 text-white flex justify-between px-6 shadow-2xl shadow-slate-900/30 active:scale-[0.98] transition-all pointer-events-auto border border-slate-700"
             onClick={() => setIsCartOpen(true)}
           >
             <div className="flex items-center bg-white/20 px-3 py-1 rounded-full">
