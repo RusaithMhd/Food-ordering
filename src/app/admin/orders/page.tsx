@@ -39,14 +39,67 @@ export default async function AdminOrdersPage(props: {
   
   const supabase = await createAdminClient();
 
-  const [orders, menuItemsRes, profilesRes] = await Promise.all([
+  const [orders, menuItemsRes, profilesRes, pastGuestsRes] = await Promise.all([
     getAdminOrders(statusFilter, dateRangeFilter, phoneFilter),
     supabase.from('menu_items').select('id, name, base_price').eq('is_active', true).order('name'),
-    supabase.from('profiles').select('id, full_name, phone_number').order('full_name')
+    supabase.from('profiles').select('id, full_name, phone_number').order('full_name'),
+    supabase.from('orders').select('customer_id, delivery_address_snapshot').not('delivery_address_snapshot', 'is', null)
   ]);
 
-  const menuItems = menuItemsRes.data;
-  const profiles = profilesRes.data;
+  const menuItems = menuItemsRes.data || [];
+  const profiles = profilesRes.data || [];
+  const pastGuests = pastGuestsRes.data || [];
+
+  const profileAddresses = new Map<string, string>();
+  const guestAddresses = new Map<string, string>();
+
+  for (const order of pastGuests) {
+    const snap = order.delivery_address_snapshot as any;
+    const address = snap?.address_line1
+      ? `${snap.address_line1}${snap.address_line2 ? `, ${snap.address_line2}` : ''}`
+      : '';
+    if (address) {
+      if (order.customer_id) {
+        profileAddresses.set(order.customer_id, address);
+      }
+      const phone = snap?.phone || '';
+      if (phone) {
+        guestAddresses.set(phone, address);
+      }
+    }
+  }
+
+  const seenPhones = new Set<string>();
+  const mergedProfiles: { id: string; full_name: string | null; phone_number: string | null; is_guest: boolean; address_line: string }[] = [];
+
+  for (const p of profiles) {
+    mergedProfiles.push({
+      id: p.id,
+      full_name: p.full_name,
+      phone_number: p.phone_number,
+      is_guest: false,
+      address_line: profileAddresses.get(p.id) || ''
+    });
+    if (p.phone_number) {
+      seenPhones.add(p.phone_number);
+    }
+  }
+
+  for (const order of pastGuests) {
+    const snap = order.delivery_address_snapshot as any;
+    const phone = snap?.phone || '';
+    const name = snap?.recipient_name || '';
+    if (phone && name && !seenPhones.has(phone)) {
+      seenPhones.add(phone);
+      mergedProfiles.push({
+        id: `GUEST_${phone}`,
+        full_name: name,
+        phone_number: phone,
+        is_guest: true,
+        address_line: guestAddresses.get(phone) || ''
+      });
+    }
+  }
 
   const stats = {
     total: orders?.length || 0,
@@ -65,7 +118,7 @@ export default async function AdminOrdersPage(props: {
           <p className="text-slate-500 mt-1.5 font-medium">View and manage all customer orders across your platform.</p>
         </div>
         <div>
-          <AdminCreateOrderDialog menuItems={menuItems || []} profiles={profiles || []} />
+          <AdminCreateOrderDialog menuItems={menuItems} profiles={mergedProfiles} />
         </div>
       </div>
 
