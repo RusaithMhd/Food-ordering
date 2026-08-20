@@ -3,6 +3,22 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { Role } from '@/lib/permissions/rbac';
+import { headers } from 'next/headers';
+
+async function getBaseUrl() {
+  let siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  if (!siteUrl) {
+    try {
+      const headerList = await headers();
+      const host = headerList.get('host') || 'localhost:3000';
+      const proto = headerList.get('x-forwarded-proto') || 'http';
+      siteUrl = `${proto}://${host}`;
+    } catch (e) {
+      siteUrl = 'http://localhost:3000';
+    }
+  }
+  return siteUrl;
+}
 
 // Validate email format
 function isValidEmail(email: string): boolean {
@@ -23,9 +39,6 @@ export async function signUpWithEmail(data: {
   if (!email || !isValidEmail(email)) {
     return { success: false, error: 'Please enter a valid email address.' };
   }
-  if (!fullName) {
-    return { success: false, error: 'Full name is required.' };
-  }
   if (password.length < 6) {
     return { success: false, error: 'Password must be at least 6 characters long.' };
   }
@@ -42,7 +55,7 @@ export async function signUpWithEmail(data: {
           full_name: fullName,
           phone_number: phone,
         },
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/`,
+        emailRedirectTo: `${await getBaseUrl()}/`,
       },
     });
 
@@ -141,7 +154,7 @@ export async function sendEmailOtp(email: string) {
     const { error } = await supabase.auth.signInWithOtp({
       email: cleanEmail,
       options: {
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/`,
+        emailRedirectTo: `${await getBaseUrl()}/`,
       },
     });
 
@@ -199,7 +212,7 @@ export async function resendVerificationEmail(email: string) {
       type: 'signup',
       email: cleanEmail,
       options: {
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/`,
+        emailRedirectTo: `${await getBaseUrl()}/`,
       },
     });
 
@@ -225,7 +238,7 @@ export async function requestPasswordReset(email: string) {
   try {
     const supabase = await createClient();
     const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/reset-password`,
+      redirectTo: `${await getBaseUrl()}/reset-password`,
     });
 
     if (error) {
