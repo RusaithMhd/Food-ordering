@@ -64,7 +64,7 @@ export default async function KitchenDashboard() {
             <p className="text-slate-500 font-medium">Live feed of incoming orders and preparation queue.</p>
           </div>
           <form action={async () => { 'use server'; revalidatePath('/kitchen'); }}>
-            <Button variant="outline" className="rounded-full bg-white border-slate-200 shadow-sm font-medium hover:bg-slate-50">
+            <Button type="submit" variant="outline" className="rounded-full bg-white border-slate-200 shadow-sm font-medium hover:bg-slate-50">
               <RefreshCw className="w-4 h-4 mr-2" /> Refresh Feed
             </Button>
           </form>
@@ -160,7 +160,7 @@ export default async function KitchenDashboard() {
                     </div>
 
                     <form action={async () => { 'use server'; await updateOrderStatus(order.id, 'PREPARING'); }} className="ml-2">
-                      <Button className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-600/20 active:scale-[0.98] transition-all text-base">
+                      <Button type="submit" className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-600/20 active:scale-[0.98] transition-all text-base">
                         Accept &amp; Start Cooking
                       </Button>
                     </form>
@@ -246,7 +246,7 @@ export default async function KitchenDashboard() {
                     </div>
 
                     <form action={async () => { 'use server'; await updateOrderStatus(order.id, 'READY'); }} className="ml-2">
-                      <Button className="w-full h-12 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition-all text-base flex items-center justify-center">
+                      <Button type="submit" className="w-full h-12 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition-all text-base flex items-center justify-center">
                         <CheckCircle2 className="w-5 h-5 mr-2" /> Mark as Ready
                       </Button>
                     </form>

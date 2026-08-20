@@ -543,7 +543,7 @@ export default function CustomerMenu() {
                 <button
                   key={price}
                   onClick={() => {
-                    addItem({ ...priceSelectionItem, base_price: price });
+                    addItem({ ...priceSelectionItem, base_price: price }, 1, `LKR ${price} Portion`);
                     setPriceSelectionItem(null);
                   }}
                   className="w-full py-3 px-4 bg-slate-50 hover:bg-amber-500 hover:text-white border border-slate-200/60 rounded-2xl font-bold text-sm text-slate-800 transition-all active:scale-[0.98] shadow-sm hover:shadow-md"

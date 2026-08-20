@@ -73,6 +73,7 @@ export interface ReceiptOrder {
     quantity: number;
     unit_price: number;
     total_price: number;
+    notes?: string | null;
   }[];
   hotel_name?: string;
 }
@@ -147,12 +148,14 @@ function buildReceipt(order: ReceiptOrder): Uint8Array {
       push(CMD.BOLD_OFF);
       push(CMD.ALIGN_LEFT);
     } else {
-      push(CMD.BOLD_ON);
-      push(leftRight(label, priceStr));
-      push(CMD.BOLD_OFF);
+      push(CMD.ALIGN_LEFT);
+      push(leftRight(`${item.quantity}x ${item.name}`, `LKR ${Number(item.total_price).toFixed(2)}`));
     }
     if (item.quantity > 1) {
-      push(line(`    @ LKR ${Number(item.unit_price).toFixed(2)} each`));
+      push(line(`    @ LKR ${Number(item.unit_price).toFixed(2)} ea`));
+    }
+    if (item.notes) {
+      push(line(`    NOTE: ${item.notes}`));
     }
   }
 
@@ -376,6 +379,7 @@ function buildBrowserReceipt(order: ReceiptOrder, hotelNameRaw: string): string 
       <span class="item-qty">${item.quantity}x</span>
       <span class="item-name">${item.name}</span>
       ${item.quantity > 1 ? `<div class="item-unit">@ LKR ${Number(item.unit_price).toFixed(2)}</div>` : ''}
+      ${item.notes ? `<div class="item-unit" style="font-weight: bold; color: #555;">NOTE: ${item.notes}</div>` : ''}
     </div>
     <div class="item-price">LKR ${Number(item.total_price).toFixed(2)}</div>
   </div>`).join('')}

@@ -66,7 +66,7 @@ export default async function DeliveryDashboard() {
               <h3 className="text-lg font-bold text-slate-900 mb-1">No Active Deliveries</h3>
               <p className="text-slate-500 text-sm">You have no pending deliveries assigned at the moment.</p>
               <form action={async () => { 'use server'; revalidatePath('/delivery'); }}>
-                <Button className="mt-6 rounded-xl bg-slate-900 text-white font-medium px-6 hover:bg-slate-800">
+                <Button type="submit" className="mt-6 rounded-xl bg-slate-900 text-white font-medium px-6 hover:bg-slate-800">
                   <Clock className="w-4 h-4 mr-2" /> Refresh Queue
                 </Button>
               </form>
@@ -88,13 +88,13 @@ export default async function DeliveryDashboard() {
                     </div>
                     {batch.status === 'PENDING' ? (
                       <form action={async () => { 'use server'; await updateBatchStatus(batch.id, 'IN_PROGRESS'); revalidatePath('/delivery'); }}>
-                        <Button size="sm" className="bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg font-bold text-xs h-9 px-4">
+                        <Button type="submit" size="sm" className="bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg font-bold text-xs h-9 px-4">
                           Start Delivery Run
                         </Button>
                       </form>
                     ) : allDelivered ? (
                       <form action={async () => { 'use server'; await updateBatchStatus(batch.id, 'COMPLETED'); revalidatePath('/delivery'); }}>
-                        <Button size="sm" className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-bold text-xs h-9 px-4">
+                        <Button type="submit" size="sm" className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-bold text-xs h-9 px-4">
                           <CheckCircle2 className="w-4 h-4 mr-1.5" /> Complete Batch
                         </Button>
                       </form>
@@ -151,12 +151,12 @@ export default async function DeliveryDashboard() {
                           {batch.status === 'IN_PROGRESS' && !isCompleted && (
                             <div className="flex space-x-2 ml-9 mt-2">
                               <form action={async () => { 'use server'; await updateOrderStatus(order.id, 'DELIVERED'); revalidatePath('/delivery'); }} className="flex-1">
-                                <Button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold h-10 shadow-sm">
+                                <Button type="submit" className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold h-10 shadow-sm">
                                   Delivered
                                 </Button>
                               </form>
                               <form action={async () => { 'use server'; await updateOrderStatus(order.id, 'FAILED_DELIVERY'); revalidatePath('/delivery'); }}>
-                                <Button variant="outline" className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:border-rose-300 font-bold h-10 px-3">
+                                <Button type="submit" variant="outline" className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:border-rose-300 font-bold h-10 px-3">
                                   Fail
                                 </Button>
                               </form>

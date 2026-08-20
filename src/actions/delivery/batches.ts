@@ -31,10 +31,12 @@ export const createDeliveryBatch = withAuth(
       // Create a batch (No RPC available in this setup without migrations, doing sequential inserts for MVP)
       
       // 2. Insert Batch
+      const batchNumber = `BATCH-${Date.now().toString(36).toUpperCase()}-${Math.floor(Math.random() * 1000)}`;
       const { data: batch, error: batchError } = await supabase
         .from('delivery_batches')
         .insert([{
-          driver_id: data.driver_id,
+          batch_number: batchNumber,
+          assigned_driver_id: data.driver_id,
           status: 'PENDING'
         }])
         .select()

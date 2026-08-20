@@ -125,7 +125,7 @@ export function CartDrawer() {
           ) : (
             <div className="space-y-6">
               {items.map((item) => (
-                <div key={item.menuItem.id} className="flex gap-4 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                <div key={item.id} className="flex gap-4 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
                   {item.menuItem.image_url ? (
                     <div className="w-20 h-20 shrink-0 bg-slate-50 rounded-xl overflow-hidden border border-slate-100">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -138,8 +138,13 @@ export function CartDrawer() {
                   )}
                   
                   <div className="flex-1 flex flex-col">
-                    <div className="flex justify-between items-start">
-                      <h4 className="font-bold text-slate-900 text-[15px] leading-tight pr-2">{item.menuItem.name}</h4>
+                    <div className="flex justify-between items-start mb-1">
+                      <div>
+                        <h4 className="font-bold text-slate-900 text-[15px] leading-tight pr-2">{item.menuItem.name}</h4>
+                        {item.notes && (
+                          <p className="text-xs text-slate-500 mt-0.5">{item.notes}</p>
+                        )}
+                      </div>
                       <button 
                         onClick={() => removeItem(item.id)}
                         className="text-slate-400 hover:text-rose-500 transition-colors p-1 -mr-1"

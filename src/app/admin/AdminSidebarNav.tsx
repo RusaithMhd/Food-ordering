@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, Menu as MenuIcon, Users, Tags, Map, ShoppingBag, Settings, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, Menu as MenuIcon, Users, Tags, Map, ShoppingBag, Settings, BarChart3, Truck } from 'lucide-react';
 
 export function AdminSidebarNav() {
   const pathname = usePathname();
@@ -11,6 +11,7 @@ export function AdminSidebarNav() {
   const links = [
     { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/admin/orders', label: 'Orders', icon: ShoppingBag },
+    { href: '/admin/delivery', label: 'Delivery Dispatch', icon: Truck },
     { href: '/admin/reports', label: 'Item Reports', icon: BarChart3 },
     { href: '/admin/zones', label: 'Delivery Zones', icon: Map },
     { href: '/admin/categories', label: 'Categories', icon: Tags },

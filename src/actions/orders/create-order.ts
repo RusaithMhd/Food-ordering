@@ -82,8 +82,14 @@ export async function createOrder(data: CreateOrderData) {
       .in('id', menuItemIds)
       .eq('is_active', true);
 
-    if (menuError || !menuItems || menuItems.length !== data.items.length) {
-      logger.error('Failed to validate menu items or some items are inactive', { error: menuError });
+    if (menuError || !menuItems) {
+      logger.error('Failed to fetch menu items', { error: menuError });
+      return { success: false, error: 'One or more items are unavailable' };
+    }
+
+    const uniqueItemIds = new Set(menuItemIds);
+    if (menuItems.length !== uniqueItemIds.size) {
+      logger.error('Some menu items are inactive or missing');
       return { success: false, error: 'One or more items are unavailable or prices could not be verified' };
     }
 
