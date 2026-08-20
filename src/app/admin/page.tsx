@@ -73,6 +73,18 @@ async function getDashboardData() {
   const { data: branches } = await supabase.from('branches').select('id, name, timezone').limit(1);
   const branch = branches?.[0] || null;
 
+  // 6. Fetch all order items to aggregate item performance price-wise
+  const { data: itemStats } = await supabase
+    .from('order_items')
+    .select(`
+      quantity,
+      unit_price,
+      total_price,
+      menu_items (
+        name
+      )
+    `);
+
   return {
     ordersCount: ordersCount || 0,
     menuItemsCount: menuItemsCount || 0,
@@ -81,6 +93,7 @@ async function getDashboardData() {
     lifetimeRevenue,
     weeklyOrders: weeklyOrders || [],
     recentOrders: recentOrders || [],
+    itemStats: itemStats || [],
     branch
   };
 }
@@ -94,8 +107,33 @@ export default async function AdminDashboardPage() {
     lifetimeRevenue,
     weeklyOrders,
     recentOrders,
+    itemStats,
     branch
   } = await getDashboardData();
+
+  // Aggregate item sales performance price-wise
+  const itemPerformanceMap = new Map<string, { name: string; price: number; quantity: number; revenue: number }>();
+  
+  if (itemStats) {
+    for (const item of itemStats as any[]) {
+      const name = item.menu_items?.name || 'Deleted Item';
+      const price = Number(item.unit_price || 0);
+      const quantity = Number(item.quantity || 0);
+      const revenue = Number(item.total_price || 0);
+      const key = `${name}_${price}`;
+      
+      const existing = itemPerformanceMap.get(key);
+      if (existing) {
+        existing.quantity += quantity;
+        existing.revenue += revenue;
+      } else {
+        itemPerformanceMap.set(key, { name, price, quantity, revenue });
+      }
+    }
+  }
+
+  const sortedPerformance = Array.from(itemPerformanceMap.values())
+    .sort((a, b) => b.quantity - a.quantity);
 
   // Process chart data for the last 7 days
   const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -389,6 +427,84 @@ export default async function AdminDashboardPage() {
                 </form>
               </div>
             </div>
+          )}
+        </div>
+      </div>
+
+      {/* Item Performance Section */}
+      <div className="bg-slate-900/50 backdrop-blur-md rounded-[2rem] border border-slate-800/80 shadow-md overflow-hidden">
+        <div className="p-6 border-b border-slate-850 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-950/30">
+          <div>
+            <h3 className="font-extrabold text-white text-lg">Item Performance (Price-Wise)</h3>
+            <p className="text-slate-400 text-xs mt-1 font-semibold">Breakdown of order quantities and total sales generated per item price options.</p>
+          </div>
+        </div>
+        
+        {/* Desktop View */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[700px]">
+            <thead>
+              <tr className="border-b border-slate-850 bg-slate-950/40 text-xs font-black text-slate-400 uppercase tracking-widest select-none">
+                <th className="px-6 py-4 font-bold">Item Name</th>
+                <th className="px-6 py-4 font-bold text-center">Ordered Price</th>
+                <th className="px-6 py-4 font-bold text-center">Total Quantity</th>
+                <th className="px-6 py-4 font-bold text-right">Total Revenue</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-855/50 text-sm">
+              {sortedPerformance.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-6 py-16 text-center text-slate-500 font-semibold">
+                    No item performance data available.
+                  </td>
+                </tr>
+              ) : (
+                sortedPerformance.map((item, idx) => (
+                  <tr key={idx} className="hover:bg-slate-900/10 transition-colors duration-300">
+                    <td className="px-6 py-4 font-extrabold text-white">
+                      {item.name}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-black bg-indigo-500/10 text-indigo-400 border border-indigo-500/15">
+                        LKR {item.price.toFixed(2)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-center font-black text-amber-400">
+                      {item.quantity}
+                    </td>
+                    <td className="px-6 py-4 text-right font-black text-white">
+                      LKR {item.revenue.toFixed(2)}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile View */}
+        <div className="md:hidden divide-y divide-slate-850">
+          {sortedPerformance.length === 0 ? (
+            <div className="p-8 text-center text-slate-500 font-semibold text-sm">
+              No item performance data available.
+            </div>
+          ) : (
+            sortedPerformance.map((item, idx) => (
+              <div key={idx} className="p-4 flex flex-col gap-2 hover:bg-slate-900/10 transition-colors duration-300">
+                <div className="flex justify-between items-start">
+                  <span className="font-extrabold text-white text-sm">{item.name}</span>
+                  <span className="font-black text-white text-sm">LKR {item.revenue.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between items-center text-xs">
+                  <span className="px-2 py-0.5 rounded-full font-black bg-indigo-500/10 text-indigo-400 border border-indigo-500/15">
+                    LKR {item.price.toFixed(2)}
+                  </span>
+                  <span className="font-bold text-slate-400">
+                    Qty: <span className="font-black text-amber-400">{item.quantity}</span>
+                  </span>
+                </div>
+              </div>
+            ))
           )}
         </div>
       </div>

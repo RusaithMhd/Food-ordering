@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ShoppingBag, Map, Tags, Menu as MenuIcon, Users, Settings } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, Map, Tags, Menu as MenuIcon, Users, Settings, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function AdminMobileNav() {
@@ -11,8 +11,7 @@ export function AdminMobileNav() {
   const links = [
     { href: '/admin', label: 'Home', icon: LayoutDashboard },
     { href: '/admin/orders', label: 'Orders', icon: ShoppingBag },
-    { href: '/admin/zones', label: 'Zones', icon: Map },
-    { href: '/admin/categories', label: 'Categories', icon: Tags },
+    { href: '/admin/reports', label: 'Reports', icon: BarChart3 },
     { href: '/admin/menu', label: 'Menu', icon: MenuIcon },
     { href: '/admin/staff', label: 'Staff', icon: Users },
     { href: '/admin/settings', label: 'Settings', icon: Settings },
