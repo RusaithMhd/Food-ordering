@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { assignRole } from '@/actions/admin/staff';
-import { Mail, BadgeCheck, UserPlus, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { Mail, BadgeCheck, UserPlus, AlertCircle, CheckCircle2, Loader2, ChevronDown } from 'lucide-react';
 
 interface Role {
   id: string;
@@ -44,25 +44,25 @@ export function InviteForm({ roles }: { roles: Role[] }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {errorMsg && (
-        <div className="flex items-start bg-rose-50 text-rose-800 p-4 rounded-2xl border border-rose-100 animate-in fade-in duration-300">
-          <AlertCircle className="w-5 h-5 mr-2.5 mt-0.5 shrink-0 text-rose-500" />
+        <div className="flex items-start bg-rose-50/50 backdrop-blur-sm text-rose-800 p-4 rounded-2xl border border-rose-200/60 shadow-sm shadow-rose-500/5 animate-in fade-in slide-in-from-top-2 duration-300">
+          <AlertCircle className="w-5 h-5 mr-3 mt-0.5 shrink-0 text-rose-500" />
           <div className="text-xs font-bold leading-relaxed">{errorMsg}</div>
         </div>
       )}
 
       {successMsg && (
-        <div className="flex items-start bg-emerald-50 text-emerald-800 p-4 rounded-2xl border border-emerald-100 animate-in fade-in duration-300">
-          <CheckCircle2 className="w-5 h-5 mr-2.5 mt-0.5 shrink-0 text-emerald-500" />
+        <div className="flex items-start bg-emerald-50/50 backdrop-blur-sm text-emerald-800 p-4 rounded-2xl border border-emerald-200/60 shadow-sm shadow-emerald-500/5 animate-in fade-in slide-in-from-top-2 duration-300">
+          <CheckCircle2 className="w-5 h-5 mr-3 mt-0.5 shrink-0 text-emerald-500" />
           <div className="text-xs font-bold leading-relaxed">{successMsg}</div>
         </div>
       )}
 
-      <div>
-        <label className="block text-sm font-semibold text-slate-700 mb-1.5">Staff Email</label>
-        <div className="relative">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+      <div className="space-y-2">
+        <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-widest pl-1">Staff Email</label>
+        <div className="relative group">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors duration-200">
             <Mail className="w-4 h-4" />
           </div>
           <input
@@ -72,15 +72,15 @@ export function InviteForm({ roles }: { roles: Role[] }) {
             required
             disabled={isLoading}
             placeholder="e.g. chef@hotel.com"
-            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-semibold"
+            className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-sm font-semibold text-slate-900 placeholder-slate-400/80 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:bg-white transition-all duration-300 disabled:opacity-50"
           />
         </div>
       </div>
 
-      <div>
-        <label className="block text-sm font-semibold text-slate-700 mb-1.5">Access Role</label>
-        <div className="relative">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+      <div className="space-y-2">
+        <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-widest pl-1">Access Role</label>
+        <div className="relative group">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors duration-200">
             <BadgeCheck className="w-4 h-4" />
           </div>
           <select
@@ -88,25 +88,28 @@ export function InviteForm({ roles }: { roles: Role[] }) {
             onChange={(e) => setRoleId(e.target.value)}
             required
             disabled={isLoading}
-            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer font-semibold"
+            className="w-full pl-11 pr-10 py-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:bg-white transition-all duration-300 disabled:opacity-50 appearance-none cursor-pointer"
           >
-            <option value="">Select Role</option>
+            <option value="" className="text-slate-400">Select Access Role</option>
             {roles.filter(r => r.name !== 'CUSTOMER').map(r => (
-              <option key={r.id} value={r.id}>{r.name}</option>
+              <option key={r.id} value={r.id} className="text-slate-800 font-medium">{r.name}</option>
             ))}
           </select>
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-focus-within:text-blue-500 transition-colors duration-200">
+            <ChevronDown className="w-4 h-4" />
+          </div>
         </div>
       </div>
 
       <Button
         type="submit"
         disabled={isLoading}
-        className="w-full h-12 rounded-xl text-sm font-bold bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-900/10 active:scale-[0.98] transition-all mt-2 flex items-center justify-center"
+        className="w-full h-13 rounded-2xl text-sm font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-md shadow-slate-950/10 active:scale-[0.98] transform hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center disabled:opacity-50 disabled:transform-none"
       >
         {isLoading ? (
           <>
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Sending Invite...
+            Sending Invitation...
           </>
         ) : (
           <>

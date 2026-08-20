@@ -1,5 +1,5 @@
-import { getAdminOrders, updateAdminOrderStatus } from '@/actions/admin/orders';
-import { ShoppingBag, ChevronDown, Calendar, Phone, CheckCircle2, AlertCircle, Eye, ArrowRight, User as UserIcon, MapPin } from 'lucide-react';
+import { getAdminOrders } from '@/actions/admin/orders';
+import { ShoppingBag, Calendar, Phone, CheckCircle2, AlertCircle, User as UserIcon, MapPin, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { OrderStatusSelect } from './OrderStatusSelect';
 import { createAdminClient } from '@/lib/supabase/server';
@@ -12,21 +12,6 @@ export const metadata = {
 
 function formatStatus(status: string) {
   return status.replace(/_/g, ' ');
-}
-
-function getStatusColor(status: string) {
-  switch (status) {
-    case 'PLACED': return 'bg-slate-100 text-slate-700 border-slate-200';
-    case 'CONFIRMED': return 'bg-blue-100 text-blue-700 border-blue-200';
-    case 'PREPARING': return 'bg-amber-100 text-amber-700 border-amber-200';
-    case 'READY': return 'bg-indigo-100 text-indigo-700 border-indigo-200';
-    case 'OUT_FOR_DELIVERY': return 'bg-purple-100 text-purple-700 border-purple-200';
-    case 'DELIVERED': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-    case 'CANCELLED': 
-    case 'FAILED_DELIVERY':
-      return 'bg-rose-100 text-rose-700 border-rose-200';
-    default: return 'bg-slate-100 text-slate-700 border-slate-200';
-  }
 }
 
 export default async function AdminOrdersPage(props: {
@@ -108,14 +93,14 @@ export default async function AdminOrdersPage(props: {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12 select-none">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center">
-            <ShoppingBag className="w-8 h-8 mr-3 text-indigo-600" />
+          <h1 className="text-3xl font-black tracking-tight text-white flex items-center">
+            <ShoppingBag className="w-8 h-8 mr-3 text-indigo-400" />
             Order Management
           </h1>
-          <p className="text-slate-500 mt-1.5 font-medium">View and manage all customer orders across your platform.</p>
+          <p className="text-slate-400 mt-1.5 font-medium">View and manage all customer orders across your platform.</p>
         </div>
         <div>
           <AdminCreateOrderDialog menuItems={menuItems} profiles={mergedProfiles} />
@@ -123,32 +108,32 @@ export default async function AdminOrdersPage(props: {
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center">
-          <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center mr-4">
-            <ShoppingBag className="w-6 h-6 text-slate-600" />
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <div className="bg-slate-900/50 backdrop-blur-md p-6 rounded-[2rem] border border-slate-800/80 shadow-md flex items-center">
+          <div className="w-12 h-12 bg-slate-950 rounded-xl flex items-center justify-center mr-4 border border-slate-850/80 text-slate-400">
+            <ShoppingBag className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Showing Orders</div>
-            <div className="text-2xl font-black text-slate-900">{stats.total}</div>
+            <div className="text-xs font-black text-slate-500 uppercase tracking-widest mb-1">Showing Orders</div>
+            <div className="text-2xl font-black text-white">{stats.total}</div>
           </div>
         </div>
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center">
-          <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center mr-4">
-            <AlertCircle className="w-6 h-6 text-amber-500" />
+        <div className="bg-slate-900/50 backdrop-blur-md p-6 rounded-[2rem] border border-slate-800/80 shadow-md flex items-center">
+          <div className="w-12 h-12 bg-amber-500/10 rounded-xl flex items-center justify-center mr-4 border border-amber-500/15 text-amber-400">
+            <AlertCircle className="w-6 h-6 animate-pulse" />
           </div>
           <div>
-            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Currently Preparing</div>
-            <div className="text-2xl font-black text-slate-900">{stats.preparing}</div>
+            <div className="text-xs font-black text-slate-500 uppercase tracking-widest mb-1">Currently Preparing</div>
+            <div className="text-2xl font-black text-white">{stats.preparing}</div>
           </div>
         </div>
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center">
-          <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center mr-4">
-            <CheckCircle2 className="w-6 h-6 text-purple-500" />
+        <div className="bg-slate-900/50 backdrop-blur-md p-6 rounded-[2rem] border border-slate-800/80 shadow-md flex items-center">
+          <div className="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center mr-4 border border-purple-500/15 text-purple-400">
+            <CheckCircle2 className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Out for Delivery</div>
-            <div className="text-2xl font-black text-slate-900">{stats.out}</div>
+            <div className="text-xs font-black text-slate-500 uppercase tracking-widest mb-1">Out for Delivery</div>
+            <div className="text-2xl font-black text-white">{stats.out}</div>
           </div>
         </div>
       </div>
@@ -160,12 +145,12 @@ export default async function AdminOrdersPage(props: {
         dateRangeFilter={dateRangeFilter} 
       />
 
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-slate-900/50 backdrop-blur-md rounded-[2rem] border border-slate-800/80 shadow-md overflow-hidden">
         {/* Filter Bar */}
-        <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-col gap-3">
+        <div className="p-5 border-b border-slate-850 bg-slate-950/20 flex flex-col gap-4">
           {/* Date Filter Segment */}
           <div className="flex items-center space-x-2 overflow-x-auto hide-scrollbar">
-            <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider mr-2 select-none shrink-0">Time Range:</span>
+            <span className="text-xs font-black text-slate-500 uppercase tracking-widest mr-3 select-none shrink-0">Time Range:</span>
             {[
               { label: "Today's Orders", value: 'TODAY' },
               { label: 'Past Orders', value: 'PAST' },
@@ -174,10 +159,10 @@ export default async function AdminOrdersPage(props: {
               <Link
                 key={range.value}
                 href={`/admin/orders?date_range=${range.value}${statusFilter !== 'ALL' ? `&status=${statusFilter}` : ''}${phoneFilter ? `&phone=${encodeURIComponent(phoneFilter)}` : ''}`}
-                className={`px-4.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-200 border ${
+                className={`px-4 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-300 border ${
                   dateRangeFilter === range.value 
-                    ? 'bg-slate-900 text-white border-slate-900 shadow-sm' 
-                    : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
+                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-500/10 scale-[1.03]' 
+                    : 'bg-slate-950/40 text-slate-400 border-slate-850 hover:bg-slate-900 hover:text-white'
                 }`}
               >
                 {range.label}
@@ -186,13 +171,28 @@ export default async function AdminOrdersPage(props: {
           </div>
 
           {/* Status Filter Segment */}
-          <div className="flex items-center space-x-2 overflow-x-auto hide-scrollbar border-t border-slate-100 pt-3">
-            <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider mr-2 select-none shrink-0">Status:</span>
-            <Link href={`/admin/orders?date_range=${dateRangeFilter}${phoneFilter ? `&phone=${encodeURIComponent(phoneFilter)}` : ''}`} className={`px-4 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-200 border ${statusFilter === 'ALL' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'}`}>
+          <div className="flex items-center space-x-2 overflow-x-auto hide-scrollbar border-t border-slate-850 pt-3.5">
+            <span className="text-xs font-black text-slate-500 uppercase tracking-widest mr-3 select-none shrink-0">Status:</span>
+            <Link
+              href={`/admin/orders?date_range=${dateRangeFilter}${phoneFilter ? `&phone=${encodeURIComponent(phoneFilter)}` : ''}`}
+              className={`px-4 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-300 border ${
+                statusFilter === 'ALL' 
+                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-500/10 scale-[1.03]' 
+                  : 'bg-slate-950/40 text-slate-400 border-slate-850 hover:bg-slate-900 hover:text-white'
+              }`}
+            >
               All Statuses
             </Link>
             {['PLACED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'].map((status) => (
-              <Link key={status} href={`/admin/orders?date_range=${dateRangeFilter}&status=${status}${phoneFilter ? `&phone=${encodeURIComponent(phoneFilter)}` : ''}`} className={`px-4 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-200 border ${statusFilter === status ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'}`}>
+              <Link
+                key={status}
+                href={`/admin/orders?date_range=${dateRangeFilter}&status=${status}${phoneFilter ? `&phone=${encodeURIComponent(phoneFilter)}` : ''}`}
+                className={`px-4 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-300 border ${
+                  statusFilter === status 
+                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-500/10 scale-[1.03]' 
+                    : 'bg-slate-950/40 text-slate-400 border-slate-850 hover:bg-slate-900 hover:text-white'
+                }`}
+              >
                 {formatStatus(status)}
               </Link>
             ))}
@@ -204,18 +204,18 @@ export default async function AdminOrdersPage(props: {
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
-              <tr className="border-b border-slate-100 bg-slate-50 text-xs font-bold text-slate-500 uppercase tracking-wider">
-                <th className="p-4 font-bold">Order Details</th>
-                <th className="p-4 font-bold">Customer</th>
-                <th className="p-4 font-bold">Items</th>
-                <th className="p-4 font-bold">Status</th>
-                <th className="p-4 font-bold text-right">Total</th>
+              <tr className="border-b border-slate-850 bg-slate-950/40 text-xs font-black text-slate-400 uppercase tracking-widest select-none">
+                <th className="px-6 py-4 font-bold">Order Details</th>
+                <th className="px-6 py-4 font-bold">Customer</th>
+                <th className="px-6 py-4 font-bold">Items</th>
+                <th className="px-6 py-4 font-bold">Status</th>
+                <th className="px-6 py-4 font-bold text-right">Total</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-sm">
+            <tbody className="divide-y divide-slate-850/50 text-sm">
               {orders?.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="p-8 text-center text-slate-500 font-medium">
+                  <td colSpan={5} className="px-6 py-16 text-center text-slate-500 font-semibold">
                     No orders found matching this status.
                   </td>
                 </tr>
@@ -229,54 +229,54 @@ export default async function AdminOrdersPage(props: {
                     : null;
 
                   return (
-                    <tr key={order.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="p-4 text-slate-800">
+                    <tr key={order.id} className="hover:bg-slate-900/10 transition-colors duration-300">
+                      <td className="px-6 py-4.5">
                         <div className="flex flex-col">
-                          <span className="font-mono font-bold text-slate-900 uppercase">#{order.id.split('-')[0]}</span>
-                          <div className="flex items-center text-xs text-slate-500 mt-1">
-                            <Calendar className="w-3 h-3 mr-1" />
+                          <span className="font-mono font-black text-white uppercase tracking-wider text-xs">#{order.id.split('-')[0]}</span>
+                          <div className="flex items-center text-xs text-slate-500 mt-1 font-bold">
+                            <Clock className="w-3.5 h-3.5 mr-1" />
                             {new Date(order.placed_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {new Date(order.placed_at).toLocaleDateString()}
                           </div>
                           {order.customer_note && (
-                            <div className="mt-1.5 p-1.5 bg-indigo-50/50 rounded-lg text-indigo-700 text-xs border border-indigo-100/50 max-w-[200px]">
-                              <span className="font-bold">Note:</span> {order.customer_note}
+                            <div className="mt-1.5 p-1.5 bg-indigo-500/5 text-indigo-400 text-xs border border-indigo-500/10 rounded-lg max-w-[200px] font-semibold">
+                              <span className="font-black">Note:</span> {order.customer_note}
                             </div>
                           )}
                         </div>
                       </td>
-                      <td className="p-4">
+                      <td className="px-6 py-4.5">
                         <div className="flex flex-col space-y-1">
-                          <span className="font-extrabold text-slate-900 flex items-center">
-                            <UserIcon className="w-3.5 h-3.5 mr-1.5 text-indigo-500" />
+                          <span className="font-extrabold text-white flex items-center">
+                            <UserIcon className="w-3.5 h-3.5 mr-1.5 text-indigo-400" />
                             {recipientName}
                           </span>
-                          <span className="text-xs text-indigo-600 font-bold flex items-center bg-indigo-50/70 px-2 py-0.5 rounded-lg w-fit border border-indigo-100/50">
+                          <span className="text-xs text-indigo-400 font-bold flex items-center bg-indigo-500/5 px-2 py-0.5 rounded-lg w-fit border border-indigo-500/10">
                             <Phone className="w-3 h-3 mr-1.5" />
                             {phone}
                           </span>
                           {addressLine && (
-                            <span className="text-xs text-slate-700 font-semibold flex items-center mt-1">
-                              <MapPin className="w-3.5 h-3.5 mr-1 text-slate-400 shrink-0" />
+                            <span className="text-xs text-slate-400 font-semibold flex items-center mt-1">
+                              <MapPin className="w-3.5 h-3.5 mr-1 text-slate-550 shrink-0" />
                               <span className="truncate max-w-[180px]" title={addressLine}>{addressLine}</span>
                             </span>
                           )}
                         </div>
                       </td>
-                      <td className="p-4">
-                        <div className="flex flex-col text-slate-600 font-medium text-xs space-y-1">
+                      <td className="px-6 py-4.5">
+                        <div className="flex flex-col text-slate-400 text-xs font-semibold space-y-0.5">
                           {order.order_items?.slice(0, 2).map((item: any, i: number) => (
                             <div key={i}>{item.quantity}x {item.menu_items?.name}</div>
                           ))}
                           {order.order_items?.length > 2 && (
-                            <div className="text-indigo-500 font-bold">+{order.order_items.length - 2} more items</div>
+                            <div className="text-indigo-400 font-black mt-1">+{order.order_items.length - 2} more items</div>
                           )}
                         </div>
                       </td>
-                      <td className="p-4">
+                      <td className="px-6 py-4.5">
                         <OrderStatusSelect orderId={order.id} currentStatus={order.status} />
                       </td>
-                      <td className="p-4 text-right">
-                        <div className="font-black text-slate-900">LKR {Number(order.total).toFixed(2)}</div>
+                      <td className="px-6 py-4.5 text-right">
+                        <div className="font-black text-white">LKR {Number(order.total).toFixed(2)}</div>
                       </td>
                     </tr>
                   );
@@ -287,9 +287,9 @@ export default async function AdminOrdersPage(props: {
         </div>
 
         {/* Mobile View */}
-        <div className="md:hidden divide-y divide-slate-100">
+        <div className="md:hidden divide-y divide-slate-850/50">
           {orders?.length === 0 ? (
-            <div className="p-8 text-center text-slate-500 font-medium text-sm">
+            <div className="p-8 text-center text-slate-500 font-semibold text-sm">
               No orders found matching this status.
             </div>
           ) : (
@@ -302,12 +302,12 @@ export default async function AdminOrdersPage(props: {
                 : null;
 
               return (
-                <div key={order.id} className="p-4 space-y-3 hover:bg-slate-50 transition-colors">
+                <div key={order.id} className="p-4 space-y-3 hover:bg-slate-900/10 transition-colors duration-300">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono font-bold text-slate-900 uppercase">#{order.id.split('-')[0]}</span>
-                    <span className="font-black text-slate-900">LKR {Number(order.total).toFixed(2)}</span>
+                    <span className="font-mono font-black text-white uppercase text-xs">#{order.id.split('-')[0]}</span>
+                    <span className="font-black text-white">LKR {Number(order.total).toFixed(2)}</span>
                   </div>
-                  <div className="text-xs text-slate-500 font-semibold flex items-center justify-between">
+                  <div className="text-xs text-slate-550 font-bold flex items-center justify-between">
                     <span className="flex items-center">
                       <Calendar className="w-3.5 h-3.5 mr-1" />
                       {new Date(order.placed_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
@@ -315,27 +315,27 @@ export default async function AdminOrdersPage(props: {
                     <OrderStatusSelect orderId={order.id} currentStatus={order.status} />
                   </div>
                   <div className="text-sm font-semibold text-slate-900 flex flex-col space-y-1.5">
-                    <span className="flex items-center font-extrabold text-slate-900">
-                      <UserIcon className="w-3.5 h-3.5 mr-1.5 text-indigo-500" />
+                    <span className="flex items-center font-extrabold text-white">
+                      <UserIcon className="w-3.5 h-3.5 mr-1.5 text-indigo-400" />
                       {recipientName}
                     </span>
-                    <span className="text-xs text-indigo-700 font-bold flex items-center bg-indigo-50 px-2 py-0.5 rounded-lg w-fit border border-indigo-100">
+                    <span className="text-xs text-indigo-400 font-bold flex items-center bg-indigo-500/5 px-2 py-0.5 rounded-lg w-fit border border-indigo-500/10">
                       <Phone className="w-3 h-3 mr-1.5" />
                       {phone}
                     </span>
                     {addressLine && (
-                      <span className="text-xs text-slate-600 font-medium flex items-center">
-                        <MapPin className="w-3.5 h-3.5 mr-1 text-indigo-400 shrink-0" />
+                      <span className="text-xs text-slate-400 font-medium flex items-center">
+                        <MapPin className="w-3.5 h-3.5 mr-1 text-indigo-500 shrink-0" />
                         {addressLine}
                       </span>
                     )}
                   </div>
                   {order.customer_note && (
-                    <div className="p-2.5 bg-indigo-50/50 rounded-xl text-indigo-700 text-xs border border-indigo-100/50 font-medium">
-                      <span className="font-bold">Note:</span> {order.customer_note}
+                    <div className="p-2.5 bg-indigo-500/5 text-indigo-400 text-xs border border-indigo-500/10 rounded-xl font-semibold">
+                      <span className="font-black">Note:</span> {order.customer_note}
                     </div>
                   )}
-                  <div className="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100 space-y-1">
+                  <div className="text-xs text-slate-400 bg-slate-950/40 p-2.5 rounded-xl border border-slate-800/80 space-y-1">
                     {order.order_items?.map((item: any, i: number) => (
                       <div key={i} className="flex justify-between">
                         <span>{item.quantity}x {item.menu_items?.name}</span>

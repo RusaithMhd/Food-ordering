@@ -3,6 +3,7 @@
 import { createAdminClient } from '@/lib/supabase/server';
 import { withAuth } from '@/lib/permissions/withAuth';
 import { revalidatePath } from 'next/cache';
+import { headers } from 'next/headers';
 
 export const assignRole = withAuth(
   async (formData: FormData) => {
@@ -26,11 +27,24 @@ export const assignRole = withAuth(
       let userId = profile?.id;
 
       if (!userId) {
+        // Dynamically resolve request host/protocol to support automatic redirect links after deployment
+        let siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+        if (!siteUrl) {
+          try {
+            const headerList = await headers();
+            const host = headerList.get('host') || 'localhost:3000';
+            const proto = headerList.get('x-forwarded-proto') || 'http';
+            siteUrl = `${proto}://${host}`;
+          } catch (e) {
+            siteUrl = 'http://localhost:3000';
+          }
+        }
+
         // User not in profiles. Let's invite them via Supabase Admin Auth
         const { data: inviteData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(
           email,
           {
-            redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback`,
+            redirectTo: `${siteUrl}/auth/callback`,
           }
         );
 
@@ -63,15 +77,28 @@ export const assignRole = withAuth(
         updated_at: new Date().toISOString(),
       }, { onConflict: 'id' });
 
-      // 3. Upsert the role mapping inside user_roles
-      const { error: roleError } = await supabase
+      // 3. Update or Insert the role mapping inside user_roles to bypass constraint mismatch errors
+      const { data: existingRoleMapping } = await supabase
         .from('user_roles')
-        .upsert({
-          user_id: userId,
-          role_id: role_id
-        }, { onConflict: 'user_id' });
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
 
-      if (roleError) throw roleError;
+      if (existingRoleMapping) {
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .update({ role_id: role_id })
+          .eq('user_id', userId);
+        if (roleError) throw roleError;
+      } else {
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: userId,
+            role_id: role_id
+          });
+        if (roleError) throw roleError;
+      }
 
       revalidatePath('/admin/staff');
       return { success: true };

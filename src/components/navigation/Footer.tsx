@@ -1,9 +1,20 @@
 'use client';
 
 import { useBranch } from '@/features/branch/BranchContext';
+import { usePathname } from 'next/navigation';
 
 export function Footer() {
   const { branch } = useBranch();
+  const pathname = usePathname();
+  
+  // Hide the footer inside admin, kitchen, or delivery dashboards
+  if (
+    pathname?.startsWith('/admin') || 
+    pathname?.startsWith('/kitchen') || 
+    pathname?.startsWith('/delivery')
+  ) {
+    return null;
+  }
   
   return (
     <footer className="w-full py-6 text-center border-t border-slate-200/50 mt-auto select-none bg-white/50 backdrop-blur-md">

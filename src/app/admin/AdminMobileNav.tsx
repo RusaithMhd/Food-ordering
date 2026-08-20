@@ -19,10 +19,10 @@ export function AdminMobileNav() {
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200/80 flex justify-around items-center h-16 z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.03)] pb-safe px-2 pointer-events-auto">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900/90 backdrop-blur-xl border-t border-slate-800/80 flex justify-around items-center h-16 z-50 shadow-[0_-10px_35px_rgba(0,0,0,0.4)] pb-safe px-2 pointer-events-auto">
       {links.map((link) => {
         const Icon = link.icon;
-        const isActive = pathname === link.href;
+        const isActive = pathname === link.href || (link.href !== '/admin' && pathname?.startsWith(link.href));
         return (
           <Link
             key={link.href}
@@ -30,15 +30,15 @@ export function AdminMobileNav() {
             className={cn(
               "flex flex-col items-center justify-center w-full h-full transition-all duration-300 relative",
               isActive 
-                ? "text-indigo-600 scale-[1.05]" 
-                : "text-slate-400 hover:text-slate-600"
+                ? "text-indigo-400 scale-[1.05]" 
+                : "text-slate-500 hover:text-slate-350"
             )}
           >
             {isActive && (
-              <span className="absolute top-0 w-8 h-1 bg-indigo-600 rounded-full" />
+              <span className="absolute top-0 w-8 h-1 bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)] animate-pulse" />
             )}
             <Icon className={cn("h-5 w-5 mb-1", isActive ? "stroke-[2.5px]" : "stroke-[2px]")} />
-            <span className="text-[9px] font-bold tracking-tight">{link.label}</span>
+            <span className="text-[9px] font-black tracking-tight">{link.label}</span>
           </Link>
         );
       })}
