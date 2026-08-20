@@ -23,6 +23,9 @@ const AuthContext = createContext<AuthContextType>({ user: null, loading: true, 
 
 export const useAuth = () => useContext(AuthContext);
 
+let lastUserId: string | null = null;
+let cachedRole: string | null = null;
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<CompatibleUser | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -45,6 +48,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           };
           setUser(compatibleUser);
 
+          if (session.user.id === lastUserId) {
+            setUserRole(cachedRole);
+            setLoading(false);
+            return;
+          }
+
           // Fetch user role
           const { data: roleData } = await supabase
             .from('user_roles')
@@ -53,8 +62,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .maybeSingle();
 
           const roleName = (roleData?.roles as any)?.name || null;
+          lastUserId = session.user.id;
+          cachedRole = roleName;
           setUserRole(roleName);
         } else {
+          lastUserId = null;
+          cachedRole = null;
           setUser(null);
           setUserRole(null);
         }
@@ -79,6 +92,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
         setUser(compatibleUser);
 
+        if (session.user.id === lastUserId) {
+          setUserRole(cachedRole);
+          setLoading(false);
+          return;
+        }
+
         try {
           const { data: roleData } = await supabase
             .from('user_roles')
@@ -87,11 +106,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .maybeSingle();
 
           const roleName = (roleData?.roles as any)?.name || null;
+          lastUserId = session.user.id;
+          cachedRole = roleName;
           setUserRole(roleName);
         } catch (e) {
           setUserRole(null);
         }
       } else {
+        lastUserId = null;
+        cachedRole = null;
         setUser(null);
         setUserRole(null);
       }

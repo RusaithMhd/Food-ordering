@@ -124,19 +124,6 @@ export async function signInWithEmail(data: {
       return { success: false, error: 'Email or password is incorrect.' };
     }
 
-    // Sync profile fallback to make sure
-    const user = signInData.user;
-    if (user) {
-      const supabaseAdmin = await createAdminClient();
-      await supabaseAdmin.from('profiles').upsert({
-        id: user.id,
-        email: user.email,
-        full_name: user.user_metadata?.full_name || email.split('@')[0],
-        phone_number: user.user_metadata?.phone_number || '',
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'id' });
-    }
-
     return { success: true };
   } catch (err: any) {
     return { success: false, error: 'An unexpected error occurred during login.' };
@@ -192,18 +179,6 @@ export async function verifyEmailOtp(email: string, token: string) {
         return { success: false, error: 'This code has expired. Please request a new one.' };
       }
       return { success: false, error: 'The verification code is incorrect.' };
-    }
-
-    // Sync profile fallback
-    const user = verifyData.user;
-    if (user) {
-      const supabaseAdmin = await createAdminClient();
-      await supabaseAdmin.from('profiles').upsert({
-        id: user.id,
-        email: user.email,
-        full_name: user.user_metadata?.full_name || cleanEmail.split('@')[0],
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'id' });
     }
 
     return { success: true };

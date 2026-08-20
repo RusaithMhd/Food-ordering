@@ -44,13 +44,14 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
-
   // If attempting to access a protected route without a user session
-  if (isProtectedPath && !user) {
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('redirect', path);
-    return NextResponse.redirect(loginUrl);
+  if (isProtectedPath) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('redirect', path);
+      return NextResponse.redirect(loginUrl);
+    }
   }
 
   return response;
