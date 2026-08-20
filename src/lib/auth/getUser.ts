@@ -1,4 +1,4 @@
-import { createClient } from '../supabase/server';
+import { createClient, createAdminClient } from '../supabase/server';
 import { logger } from '../logger';
 import { Role } from '../permissions/rbac';
 
@@ -16,9 +16,15 @@ export interface GetUserResult {
 /**
  * Securely retrieves the currently authenticated user from Supabase Auth session,
  * and fetches their role from Supabase.
+ *
+ * NOTE: We use the anon client for auth.getUser() (verifies the session JWT),
+ * but the service-role (admin) client for the user_roles lookup so that RLS
+ * policies on user_roles can never silently block a legitimate role read.
+ * This is safe because the user identity is already verified before the lookup.
  */
 export async function getUser(): Promise<GetUserResult> {
   try {
+    // Step 1: Verify the session with the anon (cookie-aware) client
     const supabase = await createClient();
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
@@ -33,8 +39,10 @@ export async function getUser(): Promise<GetUserResult> {
       picture: user.user_metadata?.avatar_url || '',
     };
 
-    // Fetch user role from Supabase securely
-    const { data: userRoleData, error: roleError } = await supabase
+    // Step 2: Look up the role using the service-role client (bypasses RLS).
+    // Identity is already confirmed above — this is safe.
+    const adminClient = await createAdminClient();
+    const { data: userRoleData, error: roleError } = await adminClient
       .from('user_roles')
       .select('roles(name)')
       .eq('user_id', user.id)

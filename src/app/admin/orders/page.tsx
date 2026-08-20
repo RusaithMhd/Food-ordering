@@ -5,6 +5,7 @@ import { OrderStatusSelect } from './OrderStatusSelect';
 import { createAdminClient } from '@/lib/supabase/server';
 import { AdminCreateOrderDialog } from './AdminCreateOrderDialog';
 import { OrderSearchForm } from './OrderSearchForm';
+import { PrintReceiptButton } from '@/components/PrintReceiptButton';
 
 export const metadata = {
   title: 'Manage Orders - Admin',
@@ -24,16 +25,18 @@ export default async function AdminOrdersPage(props: {
   
   const supabase = await createAdminClient();
 
-  const [orders, menuItemsRes, profilesRes, pastGuestsRes] = await Promise.all([
+  const [orders, menuItemsRes, profilesRes, pastGuestsRes, hotelsRes] = await Promise.all([
     getAdminOrders(statusFilter, dateRangeFilter, phoneFilter),
     supabase.from('menu_items').select('id, name, base_price').eq('is_active', true).order('name'),
     supabase.from('profiles').select('id, full_name, phone_number').order('full_name'),
-    supabase.from('orders').select('customer_id, delivery_address_snapshot').not('delivery_address_snapshot', 'is', null)
+    supabase.from('orders').select('customer_id, delivery_address_snapshot').not('delivery_address_snapshot', 'is', null),
+    supabase.from('hotels').select('name').limit(1),
   ]);
 
   const menuItems = menuItemsRes.data || [];
   const profiles = profilesRes.data || [];
   const pastGuests = pastGuestsRes.data || [];
+  const hotelName = (hotelsRes.data?.[0]?.name) || 'Hotel Ordering';
 
   const profileAddresses = new Map<string, string>();
   const guestAddresses = new Map<string, string>();
@@ -276,7 +279,30 @@ export default async function AdminOrdersPage(props: {
                         <OrderStatusSelect orderId={order.id} currentStatus={order.status} />
                       </td>
                       <td className="px-6 py-4.5 text-right">
-                        <div className="font-black text-white">LKR {Number(order.total).toFixed(2)}</div>
+                        <div className="font-black text-white mb-2">LKR {Number(order.total).toFixed(2)}</div>
+                        <PrintReceiptButton
+                          variant="icon"
+                          hotelName={hotelName}
+                          order={{
+                            id: order.id,
+                            placed_at: order.placed_at,
+                            status: order.status,
+                            subtotal: Number(order.subtotal),
+                            tax: Number(order.tax),
+                            delivery_fee: Number(order.delivery_fee),
+                            total: Number(order.total),
+                            customer_note: order.customer_note,
+                            recipient_name: (order.delivery_address_snapshot as any)?.recipient_name || order.profiles?.full_name || 'Guest',
+                            phone: (order.delivery_address_snapshot as any)?.phone || order.profiles?.phone_number || '',
+                            address: (order.delivery_address_snapshot as any)?.address_line1 || '',
+                            items: (order.order_items || []).map((i: any) => ({
+                              name: i.menu_items?.name || 'Item',
+                              quantity: Number(i.quantity),
+                              unit_price: Number(i.unit_price),
+                              total_price: Number(i.total_price),
+                            })),
+                          }}
+                        />
                       </td>
                     </tr>
                   );
@@ -343,6 +369,28 @@ export default async function AdminOrdersPage(props: {
                       </div>
                     ))}
                   </div>
+                  <PrintReceiptButton
+                    hotelName={hotelName}
+                    order={{
+                      id: order.id,
+                      placed_at: order.placed_at,
+                      status: order.status,
+                      subtotal: Number(order.subtotal),
+                      tax: Number(order.tax),
+                      delivery_fee: Number(order.delivery_fee),
+                      total: Number(order.total),
+                      customer_note: order.customer_note,
+                      recipient_name: (order.delivery_address_snapshot as any)?.recipient_name || order.profiles?.full_name || 'Guest',
+                      phone: (order.delivery_address_snapshot as any)?.phone || order.profiles?.phone_number || '',
+                      address: (order.delivery_address_snapshot as any)?.address_line1 || '',
+                      items: (order.order_items || []).map((i: any) => ({
+                        name: i.menu_items?.name || 'Item',
+                        quantity: Number(i.quantity),
+                        unit_price: Number(i.unit_price),
+                        total_price: Number(i.total_price),
+                      })),
+                    }}
+                  />
                 </div>
               );
             })
