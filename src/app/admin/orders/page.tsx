@@ -268,7 +268,18 @@ export default async function AdminOrdersPage(props: {
                       <td className="px-6 py-4.5">
                         <div className="flex flex-col text-slate-400 text-xs font-semibold space-y-0.5">
                           {order.order_items?.slice(0, 2).map((item: any, i: number) => (
-                            <div key={i}>{item.quantity}x {item.menu_items?.name}</div>
+                            <div key={i} className="mb-1">
+                              <div className="flex flex-wrap items-baseline">
+                                <span className="font-bold text-white">{item.quantity}x</span> 
+                                <span className="ml-1">{item.menu_items?.name}</span>
+                                {item.quantity > 1 && (
+                                  <span className="text-slate-500 ml-1">@ {Number(item.unit_price).toFixed(2)}</span>
+                                )}
+                              </div>
+                              {item.notes && (
+                                <div className="text-[10px] text-slate-500 mt-0.5 ml-4 leading-tight">{item.notes}</div>
+                              )}
+                            </div>
                           ))}
                           {order.order_items?.length > 2 && (
                             <div className="text-indigo-400 font-black mt-1">+{order.order_items.length - 2} more items</div>
@@ -363,9 +374,19 @@ export default async function AdminOrdersPage(props: {
                   )}
                   <div className="text-xs text-slate-400 bg-slate-950/40 p-2.5 rounded-xl border border-slate-800/80 space-y-1">
                     {order.order_items?.map((item: any, i: number) => (
-                      <div key={i} className="flex justify-between">
-                        <span>{item.quantity}x {item.menu_items?.name}</span>
-                        <span className="font-bold">LKR {Number(item.total_price).toFixed(2)}</span>
+                      <div key={i} className="flex flex-col">
+                        <div className="flex justify-between items-baseline">
+                          <span>
+                            <span className="font-bold text-white">{item.quantity}x</span> {item.menu_items?.name}
+                            {item.quantity > 1 && (
+                              <span className="text-[10px] text-slate-500 ml-1">@ {Number(item.unit_price).toFixed(2)} ea</span>
+                            )}
+                          </span>
+                          <span className="font-bold">LKR {Number(item.total_price).toFixed(2)}</span>
+                        </div>
+                        {item.notes && (
+                          <div className="text-[10px] text-slate-500 mt-0.5 ml-4 leading-tight">{item.notes}</div>
+                        )}
                       </div>
                     ))}
                   </div>

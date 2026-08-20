@@ -65,8 +65,17 @@ export default async function AdminReportsPage() {
   function aggregateForMeal(mealKey: string) {
     const map = new Map<string, { name: string; price: number; quantity: number; revenue: number }>();
     for (const item of items) {
-      const meals = parseMeals(item.menu_items?.description);
-      if (!meals.includes(mealKey)) continue;
+      const orderDate = new Date(item.orders?.placed_at);
+      const orderMins = orderDate.getHours() * 60 + orderDate.getMinutes();
+      
+      let actualMeal = 'dinner';
+      if (bClose > 0 && orderMins < bClose) {
+        actualMeal = 'breakfast';
+      } else if (lClose > 0 && orderMins < lClose) {
+        actualMeal = 'lunch';
+      }
+      
+      if (actualMeal !== mealKey) continue;
       const name = item.menu_items?.name || 'Unknown Item';
       const price = Number(item.unit_price || 0);
       const qty = Number(item.quantity || 0);

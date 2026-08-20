@@ -11,7 +11,6 @@ export function AdminMobileNav() {
   const links = [
     { href: '/admin', label: 'Home', icon: LayoutDashboard },
     { href: '/admin/orders', label: 'Orders', icon: ShoppingBag },
-    { href: '/admin/delivery', label: 'Delivery', icon: Truck },
     { href: '/admin/reports', label: 'Reports', icon: BarChart3 },
     { href: '/admin/menu', label: 'Menu', icon: MenuIcon },
     { href: '/admin/staff', label: 'Staff', icon: Users },

@@ -244,6 +244,12 @@ export function OrderHistoryClient({ initialOrders }: { initialOrders: any[] }) 
                                   <span className="text-slate-500 font-bold mr-1.5">{item.quantity}x</span>
                                   {item.menu_items?.name}
                                 </div>
+                                {item.notes && (
+                                  <div className="text-xs text-slate-500 mt-0.5">{item.notes}</div>
+                                )}
+                                {item.quantity > 1 && (
+                                  <div className="text-[10px] text-slate-400 font-semibold mt-0.5">@ LKR {item.unit_price.toFixed(2)} ea</div>
+                                )}
                               </div>
                               <div className="font-bold text-slate-700 text-sm">LKR {item.total_price.toFixed(2)}</div>
                             </div>

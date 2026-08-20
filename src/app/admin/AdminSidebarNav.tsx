@@ -11,7 +11,6 @@ export function AdminSidebarNav() {
   const links = [
     { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/admin/orders', label: 'Orders', icon: ShoppingBag },
-    { href: '/admin/delivery', label: 'Delivery Dispatch', icon: Truck },
     { href: '/admin/reports', label: 'Item Reports', icon: BarChart3 },
     { href: '/admin/zones', label: 'Delivery Zones', icon: Map },
     { href: '/admin/categories', label: 'Categories', icon: Tags },
