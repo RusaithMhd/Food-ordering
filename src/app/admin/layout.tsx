@@ -62,12 +62,31 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-6 md:p-10 lg:p-12 pb-24 md:pb-10 bg-gradient-to-b from-slate-900/10 to-slate-950">
-        <div className="max-w-6xl mx-auto">
-          {children}
+      {/* Main Content Area (including mobile header) */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        {/* Mobile Header */}
+        <div className="md:hidden flex items-center justify-between p-4 border-b border-white/5 bg-slate-900/40 backdrop-blur-xl shrink-0 z-10">
+          <Link href="/admin" className="flex items-center space-x-2">
+            <Store className="h-5 w-5 text-indigo-400" />
+            <span className="font-black text-sm text-white">Admin Console</span>
+          </Link>
+          <div className="flex items-center space-x-4">
+             <Link href="/" className="text-xs font-bold text-indigo-400 hover:text-indigo-300 transition-colors flex items-center">
+               <ArrowLeft className="w-3 h-3 mr-1" /> App
+             </Link>
+             <div className={`w-8 h-8 rounded-full bg-gradient-to-br text-white flex items-center justify-center font-black text-xs uppercase shadow-md ${avatarGradient}`}>
+              {role?.charAt(0)}
+            </div>
+          </div>
         </div>
-      </main>
+
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto p-6 md:p-10 lg:p-12 pb-24 md:pb-10 bg-gradient-to-b from-slate-900/10 to-slate-950">
+          <div className="max-w-6xl mx-auto">
+            {children}
+          </div>
+        </main>
+      </div>
 
       {/* Mobile Bottom Navigation */}
       <AdminMobileNav />

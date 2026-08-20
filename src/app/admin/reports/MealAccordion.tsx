@@ -155,59 +155,36 @@ export function MealAccordion({
               : 'No items were ordered during this meal period.'}
           </div>
         ) : (
-          <>
-            {/* Desktop table */}
-            <div className="hidden md:block overflow-x-auto">
+          <div className="overflow-x-auto w-full">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-950/40 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                    <th className="px-6 py-3.5">Item Name</th>
-                    <th className="px-6 py-3.5 text-center">Price</th>
-                    <th className="px-6 py-3.5 text-center">Qty Ordered Today</th>
-                    <th className="px-6 py-3.5 text-right">Revenue</th>
+                  <tr className="bg-slate-950/40 text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    <th className="px-3 sm:px-6 py-2 sm:py-3.5">Item Name</th>
+                    <th className="px-1 sm:px-6 py-2 sm:py-3.5 text-center">Price</th>
+                    <th className="px-1 sm:px-6 py-2 sm:py-3.5 text-center leading-tight">Qty</th>
+                    <th className="px-3 sm:px-6 py-2 sm:py-3.5 text-right">Revenue</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-850/50 text-sm">
+                <tbody className="divide-y divide-slate-850/50 text-xs sm:text-sm">
                   {items.map((item, idx) => (
                     <tr key={idx} className="hover:bg-slate-900/10 transition-colors duration-300">
-                      <td className="px-6 py-4 font-extrabold text-white">{item.name}</td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-indigo-500/10 text-indigo-400 border border-indigo-500/15">
-                          LKR {item.price.toFixed(2)}
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 font-extrabold text-white leading-tight min-w-[100px]">{item.name}</td>
+                      <td className="px-1 sm:px-6 py-3 sm:py-4 text-center">
+                        <span className="px-1.5 sm:px-2.5 py-0.5 rounded-full text-[9px] sm:text-xs font-black bg-indigo-500/10 text-indigo-400 border border-indigo-500/15 whitespace-nowrap">
+                          LKR {item.price.toFixed(0)}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="text-2xl font-black text-amber-400">{item.quantity}</span>
+                      <td className="px-1 sm:px-6 py-3 sm:py-4 text-center">
+                        <span className="text-lg sm:text-2xl font-black text-amber-400">{item.quantity}</span>
                       </td>
-                      <td className="px-6 py-4 text-right font-black text-white">
-                        LKR {item.revenue.toFixed(2)}
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 text-right font-black text-white whitespace-nowrap">
+                        LKR {item.revenue.toFixed(0)}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-
-            {/* Mobile cards */}
-            <div className="md:hidden divide-y divide-slate-850/50">
-              {items.map((item, idx) => (
-                <div key={idx} className="p-4 flex flex-col gap-2 hover:bg-slate-900/10 transition-colors">
-                  <div className="flex justify-between items-start">
-                    <span className="font-extrabold text-white text-sm flex-1 pr-3">{item.name}</span>
-                    <span className="font-black text-white text-sm">LKR {item.revenue.toFixed(0)}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-indigo-500/10 text-indigo-400 border border-indigo-500/15">
-                      LKR {item.price.toFixed(2)}
-                    </span>
-                    <span className="font-bold text-slate-400 text-xs">
-                      Qty ordered: <span className="font-black text-amber-400 text-lg">{item.quantity}</span>
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </>
         )}
       </div>
     </div>
