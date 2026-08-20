@@ -1,12 +1,20 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { User, onAuthStateChanged } from 'firebase/auth';
-import { auth } from '@/lib/firebase/client';
-import { verifySession } from '@/actions/auth/verify-session';
+import { createClient } from '@/lib/supabase/browser';
+import { User } from '@supabase/supabase-js';
+
+// We define a custom compatible User type for the application code
+export interface CompatibleUser {
+  uid: string;
+  email: string | undefined;
+  displayName: string;
+  avatarUrl?: string;
+  emailConfirmed?: boolean;
+}
 
 interface AuthContextType {
-  user: User | null;
+  user: CompatibleUser | null;
   loading: boolean;
   userRole: string | null;
 }
@@ -15,70 +23,84 @@ const AuthContext = createContext<AuthContextType>({ user: null, loading: true, 
 
 export const useAuth = () => useContext(AuthContext);
 
-let lastVerifiedToken: string | null = null;
-let cachedRole: string | null = null;
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<CompatibleUser | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setUser(firebaseUser);
-      
-      if (firebaseUser) {
-        // Sync session with the server and map to Supabase
-        try {
-          let token = await firebaseUser.getIdToken();
-          
-          // Prevent duplicate verify calls (e.g. from React 18 Strict Mode double-mounts)
-          if (token === lastVerifiedToken) {
-            setUserRole(cachedRole);
-            setLoading(false);
-            return;
-          }
-          
-          let res = await verifySession(token);
-          
-          // If session verification failed (e.g. ID token was minted >5 mins ago for session cookie creation), force refresh token
-          if (!res.success) {
-            token = await firebaseUser.getIdToken(true);
-            res = await verifySession(token);
-          }
+    const supabase = createClient();
 
-          if (res.success) {
-            lastVerifiedToken = token;
-            cachedRole = res.role || null;
-            setUserRole(res.role || null);
-          } else {
-            console.warn('Session verification unauthorized:', res.error);
-            lastVerifiedToken = null;
-            cachedRole = null;
-            setUserRole(null);
-            await auth.signOut();
-          }
-        } catch (error) {
-          console.warn('Exception during session verification:', error);
-          lastVerifiedToken = null;
-          cachedRole = null;
+    // 1. Initial Session Fetch
+    const initSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session && session.user) {
+          const compatibleUser: CompatibleUser = {
+            uid: session.user.id,
+            email: session.user.email,
+            displayName: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
+            avatarUrl: session.user.user_metadata?.avatar_url || '',
+            emailConfirmed: !!session.user.email_confirmed_at,
+          };
+          setUser(compatibleUser);
+
+          // Fetch user role
+          const { data: roleData } = await supabase
+            .from('user_roles')
+            .select('roles(name)')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+
+          const roleName = (roleData?.roles as any)?.name || null;
+          setUserRole(roleName);
+        } else {
+          setUser(null);
           setUserRole(null);
-          await auth.signOut();
+        }
+      } catch (err) {
+        console.error('Error fetching initial Supabase session:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initSession();
+
+    // 2. Auth State Change Listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session && session.user) {
+        const compatibleUser: CompatibleUser = {
+          uid: session.user.id,
+          email: session.user.email,
+          displayName: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
+          avatarUrl: session.user.user_metadata?.avatar_url || '',
+          emailConfirmed: !!session.user.email_confirmed_at,
+        };
+        setUser(compatibleUser);
+
+        try {
+          const { data: roleData } = await supabase
+            .from('user_roles')
+            .select('roles(name)')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+
+          const roleName = (roleData?.roles as any)?.name || null;
+          setUserRole(roleName);
+        } catch (e) {
+          setUserRole(null);
         }
       } else {
-        // Clear session
-        try {
-          await verifySession(null);
-        } catch (e) {
-          console.error('Failed to clear session on server');
-        }
+        setUser(null);
         setUserRole(null);
       }
-      
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   return (

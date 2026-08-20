@@ -27,6 +27,11 @@ export default function CustomerMenu() {
   const [isClosed, setIsClosed] = useState(false);
   const [priceSelectionItem, setPriceSelectionItem] = useState<MenuItem | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const parsePriceOptions = (desc: string | null | undefined): number[] => {
     if (!desc) return [];
@@ -163,10 +168,12 @@ export default function CustomerMenu() {
         {/* Header / Quote Section */}
         <div className="w-full max-w-5xl mx-auto pt-16 pb-8 px-6 relative z-10 text-center flex flex-col items-center">
           
-          <div className="inline-flex items-center px-4 py-2 bg-white rounded-full text-slate-700 font-semibold text-sm shadow-sm border border-slate-200 mb-6 animate-in slide-in-from-top-4 fade-in duration-700">
-            <Sparkles className="h-4 w-4 mr-2 text-amber-500" />
-            {getGreeting()}, {user?.displayName?.split(' ')[0] || 'Guest'}!
-          </div>
+          {mounted && (
+            <div className="inline-flex items-center px-4 py-2 bg-white rounded-full text-slate-700 font-semibold text-sm shadow-sm border border-slate-200 mb-6 animate-in slide-in-from-top-4 fade-in duration-700">
+              <Sparkles className="h-4 w-4 mr-2 text-amber-500" />
+              {getGreeting()}, {user?.displayName?.split(' ')[0] || 'Guest'}!
+            </div>
+          )}
 
           <h1 className="text-4xl md:text-6xl font-black tracking-tight text-slate-900 leading-[1.1] mb-6 animate-in zoom-in fade-in duration-700 delay-100">
             What are you craving <br />
@@ -179,7 +186,7 @@ export default function CustomerMenu() {
           <div className="bg-white/60 backdrop-blur-md p-6 rounded-3xl border border-white/50 shadow-lg max-w-2xl mx-auto animate-in slide-in-from-bottom-8 fade-in duration-700 delay-200 relative overflow-hidden group">
             <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-amber-400 to-rose-400" />
             <p className="text-lg md:text-xl font-medium text-slate-700 italic relative z-10">
-              "{getDailyQuote()}"
+              "{mounted ? getDailyQuote() : 'Loading daily inspiration...'}"
             </p>
           </div>
         </div>

@@ -1,19 +1,19 @@
 'use client';
 
 import { useAuth } from '@/features/auth/AuthProvider';
-import { auth } from '@/lib/firebase/client';
-import { signOut } from 'firebase/auth';
+import { createClient } from '@/lib/supabase/browser';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { User, Mail, LogOut, ChevronRight, ShoppingBag, MapPin, Bell } from 'lucide-react';
+import { User, Mail, LogOut, ChevronRight, ShoppingBag, MapPin, ShieldCheck, Lock } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { syncUserProfile } from '@/actions/auth/update-profile';
+import { syncUserProfile, changeUserPassword } from '@/actions/auth/supabase';
 
 export default function AccountPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const supabase = createClient();
 
   const [deliveryDetails, setDeliveryDetails] = useState({
     name: '',
@@ -21,6 +21,14 @@ export default function AccountPage() {
     location: ''
   });
   const [isDeliverySheetOpen, setIsDeliverySheetOpen] = useState(false);
+
+  // Security sheet states
+  const [isSecuritySheetOpen, setIsSecuritySheetOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [securityLoading, setSecurityLoading] = useState(false);
+  const [securityError, setSecurityError] = useState<string | null>(null);
+  const [securitySuccess, setSecuritySuccess] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -39,7 +47,7 @@ export default function AccountPage() {
 
   const handleSignOut = async () => {
     try {
-      await signOut(auth);
+      await supabase.auth.signOut();
       window.location.href = '/';
     } catch (error) {
       console.error('Sign out error', error);
@@ -56,6 +64,41 @@ export default function AccountPage() {
       });
     }
     setIsDeliverySheetOpen(false);
+  };
+
+  const handleChangePassword = async () => {
+    setSecurityError(null);
+    setSecuritySuccess(null);
+
+    if (newPassword.length < 6) {
+      setSecurityError('Password must be at least 6 characters long.');
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      setSecurityError('Passwords do not match.');
+      return;
+    }
+
+    setSecurityLoading(true);
+    try {
+      const res = await changeUserPassword(newPassword);
+      if (res.success) {
+        setSecuritySuccess('Your password has been changed successfully.');
+        setNewPassword('');
+        setConfirmNewPassword('');
+        setTimeout(() => {
+          setIsSecuritySheetOpen(false);
+          setSecuritySuccess(null);
+        }, 2000);
+      } else {
+        setSecurityError(res.error || 'Failed to update password.');
+      }
+    } catch (e) {
+      setSecurityError('An error occurred.');
+    } finally {
+      setSecurityLoading(false);
+    }
   };
 
   if (loading || !user) {
@@ -159,6 +202,70 @@ export default function AccountPage() {
                     className="w-full h-14 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-lg shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition-all"
                   >
                     Save Details
+                  </Button>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+
+          {/* Security / Password Sheet */}
+          <Sheet open={isSecuritySheetOpen} onOpenChange={setIsSecuritySheetOpen}>
+            <SheetTrigger className="w-full flex items-center justify-between p-5 hover:bg-slate-50 transition-colors border-b border-slate-50">
+              <div className="flex items-center space-x-4">
+                <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-blue-100">
+                  <ShieldCheck className="w-5 h-5 text-blue-500" />
+                </div>
+                <div className="text-left">
+                  <span className="block font-semibold text-slate-700">Security</span>
+                  <span className="block text-xs text-slate-500">Change password, manage security settings</span>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-slate-300" />
+            </SheetTrigger>
+            <SheetContent side="bottom" className="h-[80vh] md:h-auto rounded-t-3xl sm:rounded-3xl p-6 bg-white border-t border-slate-100">
+              <SheetHeader className="mb-6">
+                <SheetTitle className="text-2xl font-bold text-slate-900">Change Password</SheetTitle>
+              </SheetHeader>
+              
+              {securityError && (
+                <div className="mb-4 p-4 bg-rose-50 text-rose-600 rounded-2xl text-xs font-bold border border-rose-100">
+                  {securityError}
+                </div>
+              )}
+              {securitySuccess && (
+                <div className="mb-4 p-4 bg-emerald-50 text-emerald-600 rounded-2xl text-xs font-bold border border-emerald-100">
+                  {securitySuccess}
+                </div>
+              )}
+
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1.5">New Password (6+ chars)</label>
+                  <input 
+                    type="password" 
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-slate-900"
+                    placeholder="••••••••"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1.5">Confirm New Password</label>
+                  <input 
+                    type="password" 
+                    value={confirmNewPassword}
+                    onChange={(e) => setConfirmNewPassword(e.target.value)}
+                    className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-slate-900"
+                    placeholder="••••••••"
+                  />
+                </div>
+                <div className="pt-2">
+                  <Button 
+                    onClick={handleChangePassword}
+                    disabled={securityLoading}
+                    className="w-full h-14 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-lg shadow-lg active:scale-[0.98] transition-all"
+                  >
+                    {securityLoading ? 'Updating...' : 'Update Password'}
                   </Button>
                 </div>
               </div>

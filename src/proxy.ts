@@ -1,8 +1,8 @@
+import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export async function proxy(request: NextRequest) {
-  const session = request.cookies.get('__session')?.value;
   const path = request.nextUrl.pathname;
 
   // Paths that require authentication
@@ -14,18 +14,46 @@ export async function proxy(request: NextRequest) {
     path.startsWith('/account') ||
     path.startsWith('/orders');
 
-  // If attempting to access a protected route without a session
-  if (isProtectedPath && !session) {
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
+
+  // Create Edge-compatible Supabase Client
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value));
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
+
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // If attempting to access a protected route without a user session
+  if (isProtectedPath && !user) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', path);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Note: Detailed RBAC checking (e.g., is user an ADMIN?) shouldn't happen 
-  // in the Edge middleware because Edge doesn't support the full Node.js Firebase Admin SDK.
-  // We handle role-specific checks at the Server Component or Server Action level.
-
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {

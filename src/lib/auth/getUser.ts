@@ -1,40 +1,46 @@
-import { cookies } from 'next/headers';
-import { adminAuth } from '../firebase/server';
-import { createAdminClient } from '../supabase/server';
+import { createClient } from '../supabase/server';
 import { logger } from '../logger';
 import { Role } from '../permissions/rbac';
-import { DecodedIdToken } from 'firebase-admin/auth';
 
 export interface GetUserResult {
-  user: DecodedIdToken | null;
+  user: {
+    uid: string;
+    email: string | undefined;
+    name: string;
+    picture: string;
+  } | null;
   role: Role | null;
   error?: string;
 }
 
 /**
- * Securely retrieves the currently authenticated user from the Firebase session cookie,
+ * Securely retrieves the currently authenticated user from Supabase Auth session,
  * and fetches their role from Supabase.
  */
 export async function getUser(): Promise<GetUserResult> {
   try {
-    const cookieStore = await cookies();
-    const session = cookieStore.get('__session')?.value;
+    const supabase = await createClient();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
 
-    if (!session) {
+    if (userError || !user) {
       return { user: null, role: null, error: 'No session found' };
     }
 
-    const decodedToken = await adminAuth.verifySessionCookie(session, true);
-    
+    const decodedToken = {
+      uid: user.id,
+      email: user.email,
+      name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+      picture: user.user_metadata?.avatar_url || '',
+    };
+
     // Fetch user role from Supabase securely
-    const supabase = await createAdminClient();
     const { data: userRoleData, error: roleError } = await supabase
       .from('user_roles')
       .select('roles(name)')
-      .eq('user_id', decodedToken.uid)
-      .single();
+      .eq('user_id', user.id)
+      .maybeSingle();
 
-    if (roleError && roleError.code !== 'PGRST116') { // PGRST116 is 'Row not found'
+    if (roleError) {
       logger.error('Database error fetching user role', { error: roleError });
     }
 
@@ -42,12 +48,8 @@ export async function getUser(): Promise<GetUserResult> {
 
     return { user: decodedToken, role };
   } catch (error: any) {
-    // Let Next.js handle dynamic server rendering bailouts
-    if (error?.digest === 'DYNAMIC_SERVER_USAGE' || error?.message?.includes('Dynamic server usage') || error?.name === 'Error') {
-      // Actually Next.js dynamic errors are usually just instances of Error with a specific digest or message
-      if (error?.message?.includes('Dynamic server usage') || error?.digest === 'DYNAMIC_SERVER_USAGE') {
-        throw error;
-      }
+    if (error?.digest === 'DYNAMIC_SERVER_USAGE' || error?.message?.includes('Dynamic server usage')) {
+      throw error;
     }
     
     logger.error('Failed to get user from session', { error });

@@ -1,8 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/server';
-import { cookies } from 'next/headers';
-import { adminAuth } from '@/lib/firebase/server';
 import { redirect } from 'next/navigation';
 import { OrderHistoryClient } from './OrderHistoryClient';
+import { getUser } from '@/lib/auth/getUser';
 
 async function getMyOrders(uid: string) {
   const supabase = await createAdminClient();
@@ -25,20 +24,11 @@ async function getMyOrders(uid: string) {
 }
 
 export default async function MyOrdersPage() {
-  const cookieStore = await cookies();
-  const session = cookieStore.get('__session')?.value;
+  const { user } = await getUser();
 
-  if (!session) redirect('/login');
+  if (!user) redirect('/login');
 
-  let uid = '';
-  try {
-    const decoded = await adminAuth.verifySessionCookie(session, true);
-    uid = decoded.uid;
-  } catch {
-    redirect('/login');
-  }
-
-  const orders = await getMyOrders(uid);
+  const orders = await getMyOrders(user.uid);
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] pt-8 md:pt-12 pb-24 font-sans selection:bg-indigo-200 selection:text-indigo-900">
